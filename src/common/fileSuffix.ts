@@ -7,3 +7,8 @@ export function getFileSuffix(fsPath: string): string {
 	}
 	return extname(lower);
 }
+
+export function fileTypeFromPath(fsPath: string): string {
+	const suffix = getFileSuffix(fsPath);
+	return suffix.startsWith('.') ? suffix.slice(1) : suffix;
+}

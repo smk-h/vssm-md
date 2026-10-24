@@ -19,7 +19,7 @@ import {
     unregisterMarkdownWebview,
 } from '@/service/markdown/blockScroll';
 import { ViewerSettingsService } from '@/service/viewerSettingsService';
-import { fileTypeFromPath } from '@/service/officeViewType';
+import { fileTypeFromPath } from '@/common/fileSuffix';
 import { parseWebviewResourceUri } from '@/common/webviewUri';
 import { MarkdownDocumentSync } from '@/service/markdown/documentSync';
 import { openLinkedFile } from '@/service/markdown/linkedFile';

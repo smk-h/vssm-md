@@ -1,6 +1,5 @@
 import { TelemetryReporter } from '@vscode/extension-telemetry';
 import { env, ExtensionContext, workspace } from 'vscode';
-import { fileTypeFromPath, resolveOfficeViewType } from './officeViewType';
 
 /**
  * Application Insights connection string.
@@ -66,14 +65,6 @@ export class TelemetryService {
             ...properties,
             ...this.getCommonProperties(),
         });
-    }
-
-    trackOfficeViewOpen(fsPath: string, route?: string, fileType?: string): void {
-        const viewType = resolveOfficeViewType(fsPath, route);
-        if (!viewType) {
-            return;
-        }
-        this.trackViewOpen(viewType, fileType || fileTypeFromPath(fsPath));
     }
 
     trackEvent(event: string, properties?: Record<string, string>): void {
