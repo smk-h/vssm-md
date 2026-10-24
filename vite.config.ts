@@ -1,7 +1,6 @@
 import { rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
 import { vditorDevPlugin, vditorProdBuildPlugin } from './vite/vditorPlugin'
 
 const cwd = process.cwd()
@@ -16,25 +15,16 @@ if (argv.join(',').includes('mode')) {
   void import('./build')
 }
 
-// https://vitejs.dev/config/
-export default defineConfig(({ command, mode }) => ({
+// The Markdown editor webview is built from the embedded vditor (see vditor/).
+// This vite config only orchestrates the extension host build (build.ts) and
+// the vditor build; the root index.html is a placeholder entry for vite.
+export default defineConfig(({ command }) => ({
   plugins: [
-    react(),
     command === 'serve' ?
       vditorDevPlugin() : vditorProdBuildPlugin()
   ],
   define: {
     global: 'globalThis',
-  },
-  resolve: {
-    alias: {
-      buffer: 'buffer',
-      stream: resolve(cwd, 'src/react/shims/nodeStream.ts'),
-      util: resolve(cwd, 'src/react/shims/nodeUtil.ts'),
-    },
-  },
-  optimizeDeps: {
-    include: ['buffer'],
   },
   server: {
     cors: {
@@ -47,8 +37,4 @@ export default defineConfig(({ command, mode }) => ({
     },
   },
   base: '',
-  build: {
-    outDir: 'out/webview',
-    chunkSizeWarningLimit: 2048,
-  }
 }))

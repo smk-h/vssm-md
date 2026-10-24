@@ -26,14 +26,6 @@ function createDesktopAssetCopyPlugins(shouldWatch: boolean) {
                     from: ['./template/**/*'],
                     to: ['./'],
                 },
-                {
-                    from: ['./node_modules/node-unrar-js/dist/js/unrar.wasm'],
-                    to: ['./'],
-                },
-                {
-                    from: ['./node_modules/7z-wasm/7zz.wasm'],
-                    to: ['./'],
-                },
             ],
         }),
     ];

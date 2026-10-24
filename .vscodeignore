@@ -1,5 +1,6 @@
 .vscode/**
 .vscode-test/**
+.zcode/
 out/test/**
 src/**
 vditor/**
@@ -16,7 +17,6 @@ vsc-extension-quickstart.md
 node_modules/
 vditor/
 build.js
-public/
 lib.js
 vite/
 backlog.md
