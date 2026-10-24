@@ -200,7 +200,7 @@ export const createContextMenu = (editor) => {
                 break
             case 'paste':
                 if (document.getSelection()?.toString()) { document.execCommand('delete') }
-                vscodeEvent.emit('command', 'office.markdown.paste')
+                vscodeEvent.emit('command', 'vssm-md.markdown.paste')
                 break
             case 'exportPdf':
                 vscodeEvent.emit('export', { type: 'pdf' })

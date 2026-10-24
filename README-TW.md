@@ -13,7 +13,7 @@
 - 圖表（[Mermaid](https://mermaid.js.org/)）、數學公式（[KaTeX](https://katex.org/)）、Obsidian 風格 Callout、註腳、工作清單等
 - 主題：編輯器主題、CodeMirror 主題、Mermaid 主題，均可設為 `Auto` 跟隨 VS Code 配色
 - 增強貼上：直接貼上圖片到文件（儲存路徑可設定，支援 `workspaceDir`、`fileName`、`now`、`date`、`uuid`、`ext` 變數）
-- 匯出：在編輯器中按右鍵可將 Markdown 匯出為 PDF、DOCX 或 HTML。PDF 匯出依賴 Chromium，可透過 `vscode-office.chromiumPath` 設定瀏覽器路徑
+- 匯出：在編輯器中按右鍵可將 Markdown 匯出為 PDF、DOCX 或 HTML。PDF 匯出依賴 Chromium，可透過 `vssm-md.chromiumPath` 設定瀏覽器路徑
 - AI 潤色：右鍵使用 VS Code 語言模型或自訂 OpenAI/Anthropic/Gemini/Ollama 相容端點潤色選取內容
 - 多視窗分區捲動同步與大綱導覽
 - Wiki 連結（`[[頁面]]`）與相對連結跳轉，支援定義處搜尋
@@ -53,8 +53,8 @@
 ### 快速開始
 
 ```bash
-git clone https://github.com/cweijan/vscode-office.git
-cd vscode-office
+git clone https://github.com/smk-h/vssm-md.git
+cd vssm-md
 npm install
 ```
 
@@ -102,7 +102,7 @@ npm run package  # 產生 .vsix
 僅在以下**兩項均允許**時才會上報：
 
 1. VS Code 全域遙測已開啟（`telemetry.telemetryLevel` 不為 `off`，或舊版中 `telemetry.enableTelemetry` 為 `true`）。
-2. 擴充功能遙測已開啟：在設定中將 `vscode-office.enableTelemetry` 設為 `false` 可單獨關閉本擴充功能的上報。
+2. 擴充功能遙測已開啟：在設定中將 `vssm-md.enableTelemetry` 設為 `false` 可單獨關閉本擴充功能的上報。
 
 也可在 **設定 → 應用程式 → 遙測** 中關閉 VS Code 的全部遙測。
 

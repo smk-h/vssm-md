@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export const EXTENSION_HOST_WEB_CONTEXT = 'office.extensionHost.web';
+export const EXTENSION_HOST_WEB_CONTEXT = 'vssm-md.extensionHost.web';
 
 let webExtensionHost = false;
 

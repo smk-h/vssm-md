@@ -34,7 +34,7 @@ You can skip this if you already have a workspace.
 
 1. Portal search: **Application Insights** → **Create**
 2. **Basics**
-   - Name: e.g. `vscode-office-telemetry`
+   - Name: e.g. `vssm-md-telemetry`
    - Region: same as workspace when possible
    - Resource mode: **Workspace-based**
    - Workspace: select the workspace from above
@@ -122,7 +122,7 @@ customEvents
 | Control | Setting |
 |---------|---------|
 | VS Code global | `telemetry.telemetryLevel` / `telemetry.enableTelemetry` |
-| Extension only | `vscode-office.enableTelemetry` (default: `true`) |
+| Extension only | `vssm-md.enableTelemetry` (default: `true`) |
 
 `@vscode/extension-telemetry` checks `env.isTelemetryEnabled` before sending.
 
@@ -141,7 +141,7 @@ If `telemetry.json` is packaged with the extension, Office Viewer events appear 
 | Problem | Check |
 |---------|--------|
 | No events in Logs | Connection string set and non-empty? Rebuilt after change? Wait a few minutes |
-| Still no events | VS Code telemetry off? `vscode-office.enableTelemetry` false? |
+| Still no events | VS Code telemetry off? `vssm-md.enableTelemetry` false? |
 | Events in dev only | Published VSIX built **after** adding the connection string |
 | Query empty filter | Use `ago(24h)` or wider time range in Logs |
 

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { ExtensionContext } from 'vscode';
 import { initI18n, localize } from './vscode-nls-i18n';
 
-const prefix = 'vscode-office';
+const prefix = 'vssm-md';
 
 export function language() {
     return vscode.env.language;

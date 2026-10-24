@@ -56,7 +56,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     private aiAbortController: AbortController | null = null;
     private aiCancellationSource: vscode.CancellationTokenSource | null = null;
 
-    private getMarkdownTelemetryProps(configuration = vscode.workspace.getConfiguration("vscode-office")) {
+    private getMarkdownTelemetryProps(configuration = vscode.workspace.getConfiguration("vssm-md")) {
         return {
             editorTheme: String(configuration.get<string>("editorTheme", "Auto")),
             codeTheme: String(configuration.get<string>("codeMirrorTheme", "Auto")),
@@ -78,11 +78,11 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
         MarkdownEditorProvider.configSyncRegistered = true;
         context.subscriptions.push(
             vscode.workspace.onDidChangeConfiguration((event) => {
-                const config = vscode.workspace.getConfiguration('vscode-office');
+                const config = vscode.workspace.getConfiguration('vssm-md');
                 const patch: Partial<Record<MarkdownSyncConfigKey, unknown>> = {};
                 let changed = false;
                 for (const key of MARKDOWN_SYNC_CONFIG_KEYS) {
-                    if (event.affectsConfiguration(`vscode-office.${key}`)) {
+                    if (event.affectsConfiguration(`vssm-md.${key}`)) {
                         patch[key] = config.get(key);
                         changed = true;
                     }
@@ -199,7 +199,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             // re-parsing on every keystroke (ANTLR token recognition errors in console).
             documentSyncTimer = setTimeout(() => void flushDocumentSync(), 400);
         };
-        const config = vscode.workspace.getConfiguration("vscode-office");
+        const config = vscode.workspace.getConfiguration("vssm-md");
         registerMarkdownWebview(uri, handler);
         handler.panel.onDidDispose(() => {
             void flushDocumentSync();

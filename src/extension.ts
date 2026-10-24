@@ -13,8 +13,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	const markdownEditorProvider = new MarkdownEditorProvider(context)
 	const viewOption = { webviewOptions: { retainContextWhenHidden: true } };
 	context.subscriptions.push(
-		vscode.commands.registerCommand('office.markdown.switch', (uri) => { markdownService.switchEditor(uri) }),
-		vscode.commands.registerCommand('office.markdown.paste', () => { markdownService.loadClipboardImage() }),
+		vscode.commands.registerCommand('vssm-md.markdown.switch', (uri) => { markdownService.switchEditor(uri) }),
+		vscode.commands.registerCommand('vssm-md.markdown.paste', () => { markdownService.loadClipboardImage() }),
 		vscode.window.registerCustomEditorProvider("cweijan.markdownViewer", markdownEditorProvider, viewOption),
 		vscode.window.registerCustomEditorProvider("cweijan.markdownPreview", markdownEditorProvider, viewOption),
 	);

@@ -13,7 +13,7 @@ Features:
 - Diagrams ([Mermaid](https://mermaid.js.org/)), math typesetting ([KaTeX](https://katex.org/)), Obsidian-style callouts, footnotes, task lists and more
 - Themes: editor theme, CodeMirror theme and Mermaid theme, each followable to VS Code color theme (`Auto`)
 - Enhanced paste: paste images directly into the document (saved to a configurable path with `workspaceDir`, `fileName`, `now`, `date`, `uuid`, `ext` variables)
-- Export: right-click in the editor to export Markdown to PDF, DOCX, or HTML. PDF export requires Chromium; set the browser path with `vscode-office.chromiumPath`
+- Export: right-click in the editor to export Markdown to PDF, DOCX, or HTML. PDF export requires Chromium; set the browser path with `vssm-md.chromiumPath`
 - AI polish: right-click to polish the selected text with VS Code language models or a custom OpenAI/Anthropic/Gemini/Ollama compatible endpoint
 - Multi-webview block scroll sync and outline navigation
 - Wiki link (`[[page]]`) and relative link navigation, including jump-to-definition search
@@ -53,8 +53,8 @@ Based on [shortcut.md](shortcut.md), plus:
 ### Getting started
 
 ```bash
-git clone https://github.com/cweijan/vscode-office.git
-cd vscode-office
+git clone https://github.com/smk-h/vssm-md.git
+cd vssm-md
 npm install
 ```
 
@@ -102,7 +102,7 @@ We **do not** collect file paths, file names, URLs, repository names, document c
 Telemetry is sent only when **both** of the following allow it:
 
 1. VS Code global telemetry is enabled (`telemetry.telemetryLevel` is not `off`, or `telemetry.enableTelemetry` is `true` on older versions).
-2. Extension telemetry is enabled: set `vscode-office.enableTelemetry` to `false` in Settings.
+2. Extension telemetry is enabled: set `vssm-md.enableTelemetry` to `false` in Settings.
 
 You can also disable all VS Code telemetry in **Settings → Application → Telemetry**.
 

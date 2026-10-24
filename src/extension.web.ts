@@ -20,7 +20,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const markdownEditorProvider = new MarkdownEditorProvider(context, { isWeb: true });
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('office.markdown.switch', (uri) => { markdownService.switchEditor(uri); }),
+		vscode.commands.registerCommand('vssm-md.markdown.switch', (uri) => { markdownService.switchEditor(uri); }),
 		vscode.window.registerCustomEditorProvider('cweijan.markdownViewer', markdownEditorProvider, viewOption),
 		vscode.window.registerCustomEditorProvider('cweijan.markdownPreview', markdownEditorProvider, viewOption),
 	);

@@ -13,7 +13,7 @@
 - 图表（[Mermaid](https://mermaid.js.org/)）、数学公式（[KaTeX](https://katex.org/)）、Obsidian 风格 Callout、脚注、任务列表等
 - 主题：编辑器主题、CodeMirror 主题、Mermaid 主题，均可设为 `Auto` 跟随 VS Code 配色
 - 增强粘贴：直接粘贴图片到文档（保存路径可配置，支持 `workspaceDir`、`fileName`、`now`、`date`、`uuid`、`ext` 变量）
-- 导出：编辑器中右键可将 Markdown 导出为 PDF、DOCX 或 HTML。PDF 导出依赖 Chromium，可通过 `vscode-office.chromiumPath` 配置浏览器路径
+- 导出：编辑器中右键可将 Markdown 导出为 PDF、DOCX 或 HTML。PDF 导出依赖 Chromium，可通过 `vssm-md.chromiumPath` 配置浏览器路径
 - AI 润色：右键使用 VS Code 语言模型或自定义 OpenAI/Anthropic/Gemini/Ollama 兼容端点润色选中内容
 - 多窗口分块滚动同步与大纲导航
 - Wiki 链接（`[[页面]]`）与相对链接跳转，支持定义处搜索
@@ -53,8 +53,8 @@
 ### 快速开始
 
 ```bash
-git clone https://github.com/cweijan/vscode-office.git
-cd vscode-office
+git clone https://github.com/smk-h/vssm-md.git
+cd vssm-md
 npm install
 ```
 
@@ -102,7 +102,7 @@ npm run package  # 生成 .vsix
 仅在以下**两项均允许**时才会上报：
 
 1. VS Code 全局遥测已开启（`telemetry.telemetryLevel` 不为 `off`，或旧版中 `telemetry.enableTelemetry` 为 `true`）。
-2. 扩展遥测已开启：在设置中将 `vscode-office.enableTelemetry` 设为 `false` 可单独关闭本扩展的上报。
+2. 扩展遥测已开启：在设置中将 `vssm-md.enableTelemetry` 设为 `false` 可单独关闭本扩展的上报。
 
 也可在 **设置 → 应用程序 → 遥测** 中关闭 VS Code 的全部遥测。
 

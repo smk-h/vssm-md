@@ -3,7 +3,7 @@ import { join } from 'path';
 import * as vscode from 'vscode';
 import { broadcastToMarkdownWebviews } from '@/service/markdown/blockScroll';
 
-const CONFIG_FILE_NAME = '.vscode-office-viewer.json';
+const CONFIG_FILE_NAME = '.vssm-md-viewer.json';
 const AI_PROMPTS_KEY = 'aiPrompts';
 const AI_MODELS_KEY = 'aiModels';
 const JSON_ARRAY_GLOBAL_KEYS = [AI_PROMPTS_KEY, AI_MODELS_KEY] as const;
