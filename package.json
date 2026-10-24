@@ -20,13 +20,12 @@
 		"Other"
 	],
 	"bugs": {
-		"url": "https://github.com/cweijan/vscode-office/issues",
-		"email": "cweijan@163.com"
+		"url": "https://github.com/smk-h/vssm-md/issues"
 	},
-	"homepage": "https://github.com/cweijan/vscode-office/blob/master/README.md",
+	"homepage": "https://github.com/smk-h/vssm-md/blob/master/README.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/cweijan/vscode-office.git"
+		"url": "https://github.com/smk-h/vssm-md.git"
 	},
 	"activationEvents": [
 		"onStartupFinished"
