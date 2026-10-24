@@ -1,0 +1,56 @@
+# 匹配所有分支名
+'**':
+  web_trigger_cnb_custom_env:
+    - services:
+        - docker
+      stages:
+        - name: print web param
+          script: |
+            set +x
+            echo "developer=${developer}"
+            echo "cluster_tag=${cluster_tag}"
+            echo "cpu_cores=${cpu_cores}"
+            echo "image_select=${image_select}"
+            echo "custom_image_url=${custom_image_url}"
+        # GPU 集群核数固定为 16,web_trigger 表单不支持联动置灰,这里前置校验兜底
+        - name: 校验集群与核数匹配
+          script: |
+            case "$cluster_tag" in
+              cnb:arch:amd64:gpu*)
+                if [ "$cpu_cores" != "16" ]; then
+                  echo "❌ GPU 集群(${cluster_tag})核数固定为 16,当前选择了 ${cpu_cores} 核"
+                  echo "   请重新触发,集群选择 GPU 后核数请选 16"
+                  exit 1
+                fi
+                echo "✅ GPU 集群核数校验通过(16 核)"
+                ;;
+              *)
+                echo "✅ 非 GPU 集群,核数 ${cpu_cores} 无需校验"
+                ;;
+            esac
+        # - name: 使用插件镜像打印参数
+        #   image: docker.cnb.cool/sumu.k/cnb-custom-env/cnb-custom-env-prt
+        #   settings:
+        #     developer: ${developer}
+        #     cluster_tag: ${cluster_tag}
+        #     cpu_cores: ${cpu_cores}
+        #     image_select: ${image_select}
+        #     custom_image_url: ${custom_image_url}
+        - name: start custom environment with custom image
+          if: |
+            [ "$custom_image_url" != "" ]
+          image: docker.cnb.cool/sumu.k/cnb-custom-env/cnb-custom-env
+          settings:
+            stype: 'custom'
+            cpu: '${cpu_cores}'
+            image: '${custom_image_url}'
+            tag: '${cluster_tag}'
+        - name: start custom environment with selected image
+          if: |
+            [ "$custom_image_url" == "" ]
+          image: docker.cnb.cool/sumu.k/cnb-custom-env/cnb-custom-env
+          settings:
+            stype: 'custom'
+            cpu: '${cpu_cores}'
+            image: '${image_select}'
+            tag: '${cluster_tag}'
