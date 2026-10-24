@@ -76,14 +76,16 @@ jobs:
 
       # 步骤 7: 查询市场最新已发布版本，仅当本地版本更新时才上传
       # （同版本重跑自动跳过，保证流水线幂等；查询失败按 0.0.0 处理，保守放行发布）
+      # filterType 必须用 7（按扩展名精确匹配）：10 是搜索文本匹配，会命中同发布者其他扩展
+      # （v1.0.0 就曾因此借到 vssm-tool 的 3.0.0 而误跳过发布）；并校验返回确为本扩展
       - name: Check marketplace version
         id: market
         run: |
           RESPONSE=$(curl -sf -X POST "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json;api-version=3.0-preview.1" \
-            -d '{"filters":[{"criteria":[{"filterType":10,"value":"ms-vs-extensions.vssm-md"}],"pageNumber":1,"pageSize":1}],"flags":914}' || echo '{}')
-          MARKET_VERSION=$(echo "$RESPONSE" | node -e 'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>{try{console.log(JSON.parse(d).results[0].extensions[0].versions[0].version)}catch{console.log("0.0.0")}});')
+            -d '{"filters":[{"criteria":[{"filterType":7,"value":"ms-vs-extensions.vssm-md"}],"pageNumber":1,"pageSize":1}],"flags":914}' || echo '{}')
+          MARKET_VERSION=$(echo "$RESPONSE" | node -e 'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>{try{const e=JSON.parse(d).results[0].extensions[0];console.log(e.extensionName==="vssm-md"&&e.publisher.publisherName==="ms-vs-extensions"?e.versions[0].version:"0.0.0")}catch{console.log("0.0.0")}});')
           LOCAL_VERSION=$(node -p "require('./package.json').version")
           # semver 比较：本地大于市场返回 0（预发布后缀视作小于同号正式版）
           if node -e 'const c=(a,b)=>{const A=a.split("-"),B=b.split("-");for(let i=0;i<3;i++){const d=(+(A[0].split(".")[i])||0)-(+(B[0].split(".")[i])||0);if(d)return d>0?1:-1}return A.length===B.length?0:(A.length>B.length?-1:1)};process.exit(c(process.argv[1],process.argv[2])>0?0:2)' "$LOCAL_VERSION" "$MARKET_VERSION"; then
