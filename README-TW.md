@@ -1,33 +1,23 @@
-# Office Viewer
+# Markdown Editor
 
 [English](README.md) | [简体中文](README-CN.md) | 繁體中文
 
 ## 介紹
 
-本擴充功能支援在 VS Code 中預覽以下常見的辦公檔案格式：
+本擴充功能以完整的所見即所得編輯器（基於 [vditor](https://github.com/Vanessa219/vditor)）取代 VS Code 預設的 Markdown 編輯器。
 
-- Excel: `.xls`、`.xlsx`、`.xlsm`、`.csv`、`.ods`
-- Word: `.docx`、`.dotx`
-- PowerPoint: `.pptx`、`.pptm`
-- PDF 與電子書: `.pdf`、`.epub`
-- HEIC/TIFF: `.heic`、`.heif`、`.tiff`
-- 設計檔案: `.psd`、`.xmind`、`.icns`、`.svg`
-- 字型: `.ttf`、`.otf`、`.woff`、`.woff2`
-- Markdown: `.md`、`.markdown`
-- HTML: `.html`、`.htm`
-- HTTP 請求: `.http`、`.rest`
-- Java: `.class`（反編譯）
-- 壓縮檔案: `.zip`、`.jar`、`.vsix`、`.rar`、`.7z`、`.tar`、`.tar.gz`、`.tgz`、`.apk`
+功能：
 
-## Git 歷史
-
-Office Viewer 內建完整的 Git 歷史工作區，讓你無需離開 VS Code 即可瀏覽儲存庫。可從原始碼控制檢視、編輯器標題列、編輯器右鍵選單或檔案總管右鍵選單開啟。
-
-![1783342874748](image/README/1783342874748.png)
-
-## Markdown
-
-整合 Markdown 所見即所得編輯器。
+- 編輯模式：所見即所得（WYSIWYG）與即時渲染（IR）
+- 程式碼區塊語法高亮（[CodeMirror 6](https://codemirror.net/)），支援語言自動補全
+- 圖表（[Mermaid](https://mermaid.js.org/)）、數學公式（[KaTeX](https://katex.org/)）、Obsidian 風格 Callout、註腳、工作清單等
+- 主題：編輯器主題、CodeMirror 主題、Mermaid 主題，均可設為 `Auto` 跟隨 VS Code 配色
+- 增強貼上：直接貼上圖片到文件（儲存路徑可設定，支援 `workspaceDir`、`fileName`、`now`、`date`、`uuid`、`ext` 變數）
+- 匯出：在編輯器中按右鍵可將 Markdown 匯出為 PDF、DOCX 或 HTML。PDF 匯出依賴 Chromium，可透過 `vscode-office.chromiumPath` 設定瀏覽器路徑
+- AI 潤色：右鍵使用 VS Code 語言模型或自訂 OpenAI/Anthropic/Gemini/Ollama 相容端點潤色選取內容
+- 多視窗分區捲動同步與大綱導覽
+- Wiki 連結（`[[頁面]]`）與相對連結跳轉，支援定義處搜尋
+- 桌面端與瀏覽器（vscode.dev）皆可使用
 
 如需使用 VS Code 原生 Markdown 編輯器，請在 `settings.json` 中新增以下設定：
 
@@ -40,11 +30,11 @@ Office Viewer 內建完整的 Git 歷史工作區，讓你無需離開 VS Code �
 }
 ```
 
-在編輯器中按右鍵，可將 Markdown 匯出為 PDF、DOCX 或 HTML。PDF 匯出依賴 Chromium，可透過 `vscode-office.chromiumPath` 設定瀏覽器路徑。
+也可以透過 `Switch markdown editor` 命令（`Ctrl+Alt+E` / `⌘ ^ E`）在兩種編輯器間切換。
 
-![匯出 Markdown](image/README-CN/1685418034035.png)
+## 快捷鍵
 
-快捷鍵：基於 [shortcut.md](shortcut.md)，以及：
+基於 [shortcut.md](shortcut.md)，以及：
 
 - 新行: `Ctrl+Enter` / `⌘ Enter`
 - 硬換行: `Shift+Enter` / `⇧ Enter`
@@ -53,24 +43,9 @@ Office Viewer 內建完整的 Git 歷史工作區，讓你無需離開 VS Code �
 - 在 VS Code 中編輯: `Ctrl Alt E` / `⌘ ^ E`
 - 貼上為純文字: `Ctrl+Shift+V` / `⌘ ⇧ V`
 
-## 其他功能
-
-- HTML: 編輯時按下 `Ctrl+Shift+V` 可即時預覽
-- YAML: 支援文件大綱與錨點導覽（別名引用可跳轉到定義）
-- 圖示主題: 內建 [Material Icon Theme](https://github.com/PKief/vscode-material-icon-theme) 部分圖示，並提供 **Office Material Icon Theme** 與 **One Dark Modern** 配色主題
-- Excel: 支援預覽與儲存 `.xlsx`、`.xls`、`.xlsm`、`.csv`、`.ods` 等檔案
-- HTTP: 在 `.http`、`.rest` 檔案中傳送請求（整合自 [REST Client](https://github.com/Huachao/vscode-restclient)，並修正了本地請求的已知問題）；按 `Ctrl+Enter` / `⌘ Enter` 傳送
-- Java: 開啟 `.class` 檔案可反編譯並查看原始碼
-
-## Sponsor
-
-[![Database Client](https://doc.database-client.com/public/logo.png)](https://marketplace.visualstudio.com/items?itemName=cweijan.vscode-database-client2)
-
-適用於 Visual Studio Code 的資料庫用戶端，支援 **MySQL/MariaDB、PostgreSQL、SQLite、Redis** 以及 **ElasticSearch** 等資料庫的管理，且可作為 SSH 用戶端，極大地提升您的生產力！[立刻安裝](https://marketplace.visualstudio.com/items?itemName=cweijan.vscode-database-client2)。
-
 ## 開發指南
 
-### 環境要求
+### 環境需求
 
 - [Node.js](https://nodejs.org/) 18+
 - [VS Code](https://code.visualstudio.com/) 1.64+
@@ -83,7 +58,7 @@ cd vscode-office
 npm install
 ```
 
-### 開發除錯
+### 開發偵錯
 
 **桌面端擴充功能**（完整功能）：
 
@@ -91,15 +66,17 @@ npm install
 npm run dev
 ```
 
-在 VS Code 中按 `F5`，或在「執行和偵錯」中選擇 **Extension**。
+在 VS Code 中按 `F5`，或在「執行與偵錯」中選擇 **Extension**。
 
-**Web 端擴充功能**（瀏覽器中的 Markdown、HTML、YAML）：
+**Web 端擴充功能**（瀏覽器中的 Markdown 編輯器）：
 
 ```bash
 npm run dev:web
 ```
 
-在「執行和偵錯」中選擇 **Extension (Web)**。
+在「執行與偵錯」中選擇 **Extension (Web)**。
+
+Markdown 編輯器 webview 由 `vditor/` 內嵌原始碼建置到 `resource/markdown/`；開發模式下修改 vditor 原始碼會自動重新建置。
 
 ### 建置與打包
 
@@ -110,15 +87,15 @@ npm run package  # 產生 .vsix
 
 ## 使用資料（Usage Data）
 
-Office Viewer 會收集**匿名使用資料**，用於了解各預覽功能的使用情況，以便改進擴充功能。資料透過官方模組 [`@vscode/extension-telemetry`](https://www.npmjs.com/package/@vscode/extension-telemetry) 傳送至 [Azure Application Insights](https://learn.microsoft.com/zh-tw/azure/azure-monitor/app/app-insights-overview)。
+本擴充功能會收集**匿名使用資料**，用於了解編輯器的使用情況，以便改進擴充功能。資料透過官方模組 [`@vscode/extension-telemetry`](https://www.npmjs.com/package/@vscode/extension-telemetry) 傳送至 [Azure Application Insights](https://learn.microsoft.com/zh-cn/azure/azure-monitor/app/app-insights-overview)。
 
 ### 收集內容
 
 | 事件 | 觸發時機 | 屬性 |
 |------|---------|------|
-| `view.open` | 開啟自訂預覽/編輯器 | `viewType`（如 `excel`、`markdown`、`pdf`）、`fileType`（僅副檔名，如 `xlsx`、`md`） |
+| `view.open` | 開啟編輯器 | `viewType`（`markdown`）、`fileType`（僅副檔名，如 `md`） |
 
-**不會**收集檔案路徑、檔名、URL、儲存庫名稱、請求內容或其他可識別個人身份的資訊。
+**不會**收集檔案路徑、檔名、URL、儲存庫名稱、文件內容或其他可識別個人身分的資訊。
 
 ### 如何關閉
 
@@ -131,21 +108,8 @@ Office Viewer 會收集**匿名使用資料**，用於了解各預覽功能的�
 
 ### 維護者設定
 
-若自行建置並發佈本擴充功能，請參閱 [docs/telemetry.md](docs/telemetry.md) 設定 Azure Application Insights 及範例查詢。
+若自行建置並發布本擴充功能，請參閱 [docs/telemetry.md](docs/telemetry.md) 設定 Azure Application Insights 及範例查詢。
 
 ## Credits
 
-- PDF rendering: [mozilla/pdf.js](https://github.com/mozilla/pdf.js/)
-- DOCX rendering: [VolodymyrBaydalka/docxjs](https://github.com/VolodymyrBaydalka/docxjs)
-- PPTX rendering: [pptxviewjs](https://www.npmjs.com/package/pptxviewjs)
-- XLSX rendering:
-  - [SheetJS/sheetjs](https://github.com/SheetJS/sheetjs): XLSX parsing
-  - [myliang/x-spreadsheet](https://github.com/myliang/x-spreadsheet): XLSX rendering
-- EPUB: [futurepress/epub.js](https://github.com/futurepress/epub.js)
-- PSD: [ag-psd](https://github.com/Agamnentzar/ag-psd)
-- XMind: [mind-elixir](https://github.com/ssshooter/mind-elixir-core), [@mind-elixir/import-xmind](https://github.com/ssshooter/mind-elixir-core)
-- HEIC conversion: [heic2any](https://github.com/alexcorvi/heic2any)
-- Java decompiler: [JetBrains/java-decompiler](https://github.com/JetBrains/intellij-community/tree/master/plugins/java-decompiler/engine)
-- HTTP: [REST Client](https://github.com/Huachao/vscode-restclient)
-- Markdown: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)
-- Material Icon theme: [PKief/vscode-material-icon-theme](https://github.com/PKief/vscode-material-icon-theme)
+- Markdown 編輯器: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)

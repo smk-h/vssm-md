@@ -1,33 +1,23 @@
-# Office Viewer
+# Markdown Editor
 
 English | [简体中文](README-CN.md) | [繁體中文](README-TW.md)
 
 ## Introduction
 
-This extension lets you preview and edit common office and design files directly in VS Code.
+This extension replaces the default Markdown editor in VS Code with a full WYSIWYG editor (based on [vditor](https://github.com/Vanessa219/vditor)).
 
-- Excel: `.xls`, `.xlsx`, `.xlsm`, `.csv`, `.ods`
-- Word: `.docx`, `.dotx`
-- PowerPoint: `.pptx`, `.pptm`
-- PDF & eBook: `.pdf`, `.epub`
-- HEIC/TIFF: `.heic`, `.heif`, `.tiff`
-- Design: `.psd`, `.xmind`, `.icns`, `.svg`
-- Font: `.ttf`, `.otf`, `.woff`, `.woff2`
-- Markdown: `.md`, `.markdown`
-- HTML: `.html`, `.htm`
-- HTTP request: `.http`, `.rest`
-- Java: `.class` (decompiler)
-- Compressed files: `.zip`, `.jar`, `.vsix`, `.rar`, `.7z`, `.tar`, `.tar.gz`, `.tgz`, `.apk`
+Features:
 
-## Git History
-
-Office Viewer includes a full Git History workspace for exploring repositories without leaving VS Code. Open it from the Source Control view, the editor title bar, the editor context menu, or the file explorer context menu.
-
-![1783342874748](image/README/1783342874748.png)
-
-## Markdown
-
-This extension replaces the default Markdown editor with a WYSIWYG editor.
+- Editing modes: WYSIWYG and instant rendering (IR)
+- Code blocks with syntax highlighting ([CodeMirror 6](https://codemirror.net/)) and language auto-completion
+- Diagrams ([Mermaid](https://mermaid.js.org/)), math typesetting ([KaTeX](https://katex.org/)), Obsidian-style callouts, footnotes, task lists and more
+- Themes: editor theme, CodeMirror theme and Mermaid theme, each followable to VS Code color theme (`Auto`)
+- Enhanced paste: paste images directly into the document (saved to a configurable path with `workspaceDir`, `fileName`, `now`, `date`, `uuid`, `ext` variables)
+- Export: right-click in the editor to export Markdown to PDF, DOCX, or HTML. PDF export requires Chromium; set the browser path with `vscode-office.chromiumPath`
+- AI polish: right-click to polish the selected text with VS Code language models or a custom OpenAI/Anthropic/Gemini/Ollama compatible endpoint
+- Multi-webview block scroll sync and outline navigation
+- Wiki link (`[[page]]`) and relative link navigation, including jump-to-definition search
+- Works on desktop and in the browser (vscode.dev)
 
 To use the built-in VS Code Markdown editor instead, add this to your `settings.json`:
 
@@ -40,11 +30,11 @@ To use the built-in VS Code Markdown editor instead, add this to your `settings.
 }
 ```
 
-Right-click in the editor to export Markdown to PDF, DOCX, or HTML. PDF export requires Chromium; set the browser path with `vscode-office.chromiumPath`.
+You can also switch between the two editors with the `Switch markdown editor` command (`Ctrl+Alt+E` / `⌘ ^ E`).
 
-![Export Markdown](image/README-CN/1685418034035.png)
+## Shortcuts
 
-Shortcuts: Based on [shortcut.md](shortcut.md), plus:
+Based on [shortcut.md](shortcut.md), plus:
 
 - New line: `Ctrl+Enter` / `⌘ Enter`
 - Hard line break: `Shift+Enter` / `⇧ Enter`
@@ -52,21 +42,6 @@ Shortcuts: Based on [shortcut.md](shortcut.md), plus:
 - Set CodeMirror language: `Alt+Enter` / `^ Enter`
 - Edit in VS Code: `Ctrl Alt E` / `⌘ ^ E`
 - Paste as plain text: `Ctrl+Shift+V` / `⌘ ⇧ V`
-
-## Other features
-
-- HTML: live preview while editing; press `Ctrl+Shift+V` to open the live view
-- YAML: document outline and anchor navigation (Go to Definition for alias references)
-- Icon theme: includes a subset of [Material Icon Theme](https://github.com/PKief/vscode-material-icon-theme) icons, plus **Office Material Icon Theme** and **One Dark Modern** color themes
-- Excel: preview and save `.xlsx`, `.xls`, `.xlsm`, `.csv`, and `.ods` files
-- HTTP: send requests from `.http` and `.rest` files (integrated from [REST Client](https://github.com/Huachao/vscode-restclient) with fixes for local request issues); press `Ctrl+Enter` / `⌘ Enter` to send
-- Java: decompile and view `.class` files
-
-## Sponsor
-
-[![Database Client](https://doc.database-client.com/public/logo.png)](https://marketplace.visualstudio.com/items?itemName=cweijan.vscode-database-client2)
-
-Database Client for Visual Studio Code, supporting the management of **MySQL/MariaDB, PostgreSQL, SQLite, Redis**, and **ElasticSearch**, and works as an **SSH** client to boost your productivity! [Get it now](https://marketplace.visualstudio.com/items?itemName=cweijan.vscode-database-client2).
 
 ## Development Guide
 
@@ -93,13 +68,15 @@ npm run dev
 
 Press `F5` in VS Code, or choose **Extension** from Run and Debug.
 
-**Web extension** (Markdown, HTML, YAML in the browser):
+**Web extension** (Markdown editor in the browser):
 
 ```bash
 npm run dev:web
 ```
 
 Choose **Extension (Web)** from Run and Debug.
+
+The Markdown editor webview is built from the embedded vditor source in `vditor/` into `resource/markdown/`; editing vditor sources rebuilds it automatically in dev mode.
 
 ### Build & package
 
@@ -110,15 +87,15 @@ npm run package  # create .vsix
 
 ## Usage data
 
-Office Viewer collects **anonymous usage data** to understand which preview features are used, so we can improve the extension. Data is sent to [Azure Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview) via the official [`@vscode/extension-telemetry`](https://www.npmjs.com/package/@vscode/extension-telemetry) module.
+This extension collects **anonymous usage data** to understand how the editor is used, so we can improve it. Data is sent to [Azure Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview) via the official [`@vscode/extension-telemetry`](https://www.npmjs.com/package/@vscode/extension-telemetry) module.
 
 ### What we collect
 
-| Event         | When                              | Properties                                                                                                 |
-| ------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `view.open` | A custom preview/editor is opened | `viewType` (e.g. `excel`, `markdown`, `pdf`), `fileType` (extension only, e.g. `xlsx`, `md`) |
+| Event         | When                 | Properties                                                              |
+| ------------- | -------------------- | ----------------------------------------------------------------------- |
+| `view.open` | The editor is opened | `viewType` (`markdown`), `fileType` (extension only, e.g. `md`) |
 
-We **do not** collect file paths, file names, URLs, repository names, request contents, or other personally identifiable information.
+We **do not** collect file paths, file names, URLs, repository names, document contents, or other personally identifiable information.
 
 ### How to opt out
 
@@ -135,17 +112,4 @@ If you build and publish this extension yourself, see [docs/telemetry.md](docs/t
 
 ## Credits
 
-- PDF rendering: [mozilla/pdf.js](https://github.com/mozilla/pdf.js/)
-- DOCX rendering: [VolodymyrBaydalka/docxjs](https://github.com/VolodymyrBaydalka/docxjs)
-- PPTX rendering: [pptxviewjs](https://www.npmjs.com/package/pptxviewjs)
-- XLSX rendering:
-  - [SheetJS/sheetjs](https://github.com/SheetJS/sheetjs): XLSX parsing
-  - [myliang/x-spreadsheet](https://github.com/myliang/x-spreadsheet): XLSX rendering
-- EPUB: [futurepress/epub.js](https://github.com/futurepress/epub.js)
-- PSD: [ag-psd](https://github.com/Agamnentzar/ag-psd)
-- XMind: [mind-elixir](https://github.com/ssshooter/mind-elixir-core), [@mind-elixir/import-xmind](https://github.com/ssshooter/mind-elixir-core)
-- HEIC conversion: [heic2any](https://github.com/alexcorvi/heic2any)
-- Java decompiler: [JetBrains/java-decompiler](https://github.com/JetBrains/intellij-community/tree/master/plugins/java-decompiler/engine)
-- HTTP: [REST Client](https://github.com/Huachao/vscode-restclient)
-- Markdown: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)
-- Material Icon theme: [PKief/vscode-material-icon-theme](https://github.com/PKief/vscode-material-icon-theme)
+- Markdown editor: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)
