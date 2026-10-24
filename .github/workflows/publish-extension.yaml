@@ -1,0 +1,163 @@
+# .github/workflows/publish-extension.yaml
+
+name: Build and Publish Extension
+
+# 一条流水线完成扩展交付全流程（参考 vssm-tool 的 publish-extension.yaml）：
+#   打包 VSIX（npm run package 链式执行 vscode:prepublish：vite 生产构建）
+#   → 将同一打包产物发布到 VS Code Marketplace 与 Open VSX Registry
+#   → 创建 v<版本> 标签并发布 GitHub Release（附 .vsix）
+# 触发条件：推送到 main 且 commit message 含 [publish] 标记，或手动触发
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write # 推送标签与创建 Release 需要
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Package, publish and release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[publish]')
+    steps:
+      # 步骤 1: 检出代码库（完整历史用于读取既有标签做防重校验）
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 步骤 2: 设置 Node.js 环境
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      # 步骤 3: 安装依赖
+      - name: Install dependencies
+        run: npm ci # 使用 package-lock.json 确保精确安装
+
+      # 步骤 4: 安装 vsce 与 ovsx 并读取版本信息
+      - name: Install vsce and ovsx
+        run: npm install -g @vscode/vsce ovsx
+
+      - name: Read version from package.json
+        id: meta
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "vsix=vssm-md-$VERSION.vsix" >> "$GITHUB_OUTPUT"
+
+      # 步骤 5: 防重校验：同名标签已存在说明该版本发布过，需先提升 package.json 版本号
+      - name: Guard against duplicated version
+        env:
+          TAG_NAME: ${{ steps.meta.outputs.tag }}
+        run: |
+          if git ls-remote --tags origin "refs/tags/${TAG_NAME}" | grep -q "${TAG_NAME}"; then
+            echo "::error::标签 ${TAG_NAME} 已存在，请先在 package.json 中提升版本号"
+            exit 1
+          fi
+
+      # 步骤 6: 打包 VSIX（vsce package 链式执行 vscode:prepublish 完成生产构建）
+      - name: Package VSIX
+        run: npm run package
+
+      - name: Verify VSIX artifact
+        env:
+          VSIX_NAME: ${{ steps.meta.outputs.vsix }}
+        run: ls -lh "$VSIX_NAME"
+
+      # 步骤 7: 查询市场最新已发布版本，仅当本地版本更新时才上传
+      # （同版本重跑自动跳过，保证流水线幂等；查询失败按 0.0.0 处理，保守放行发布）
+      - name: Check marketplace version
+        id: market
+        run: |
+          RESPONSE=$(curl -sf -X POST "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json;api-version=3.0-preview.1" \
+            -d '{"filters":[{"criteria":[{"filterType":10,"value":"ms-vs-extensions.vssm-md"}],"pageNumber":1,"pageSize":1}],"flags":914}' || echo '{}')
+          MARKET_VERSION=$(echo "$RESPONSE" | node -e 'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>{try{console.log(JSON.parse(d).results[0].extensions[0].versions[0].version)}catch{console.log("0.0.0")}});')
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          # semver 比较：本地大于市场返回 0（预发布后缀视作小于同号正式版）
+          if node -e 'const c=(a,b)=>{const A=a.split("-"),B=b.split("-");for(let i=0;i<3;i++){const d=(+(A[0].split(".")[i])||0)-(+(B[0].split(".")[i])||0);if(d)return d>0?1:-1}return A.length===B.length?0:(A.length>B.length?-1:1)};process.exit(c(process.argv[1],process.argv[2])>0?0:2)' "$LOCAL_VERSION" "$MARKET_VERSION"; then
+            echo "::notice::local $LOCAL_VERSION > marketplace $MARKET_VERSION, will publish"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::local $LOCAL_VERSION <= marketplace $MARKET_VERSION, skip publishing"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # 步骤 8: 将打包产物原样上传市场（而非重新打包，保证市场二进制与 Release 资产一致）
+      - name: Publish to Visual Studio Code Marketplace
+        if: steps.market.outputs.publish == 'true'
+        run: vsce publish --packagePath "${{ steps.meta.outputs.vsix }}"
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      # 步骤 9: 查询 Open VSX Registry 最新已发布版本，仅当本地版本更新时才上传
+      # （与市场检查同理保证幂等，Open VSX 不允许覆盖同版本；查询失败按 0.0.0 处理，保守放行发布）
+      - name: Check Open VSX version
+        id: openvsx
+        run: |
+          RESPONSE=$(curl -sf "https://open-vsx.org/api/ms-vs-extensions/vssm-md" || echo '{}')
+          OPENVSX_VERSION=$(echo "$RESPONSE" | node -e 'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>{try{console.log(JSON.parse(d).version)}catch{console.log("0.0.0")}});')
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          # semver 比较：本地大于 Open VSX 返回 0（预发布后缀视作小于同号正式版）
+          if node -e 'const c=(a,b)=>{const A=a.split("-"),B=b.split("-");for(let i=0;i<3;i++){const d=(+(A[0].split(".")[i])||0)-(+(B[0].split(".")[i])||0);if(d)return d>0?1:-1}return A.length===B.length?0:(A.length>B.length?-1:1)};process.exit(c(process.argv[1],process.argv[2])>0?0:2)' "$LOCAL_VERSION" "$OPENVSX_VERSION"; then
+            echo "::notice::local $LOCAL_VERSION > Open VSX $OPENVSX_VERSION, will publish"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::local $LOCAL_VERSION <= Open VSX $OPENVSX_VERSION, skip publishing"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # 步骤 10: 将同一打包产物上传 Open VSX Registry
+      - name: Publish to Open VSX Registry
+        if: steps.openvsx.outputs.publish == 'true'
+        run: ovsx publish --packagePath "${{ steps.meta.outputs.vsix }}"
+        env:
+          OVSX_PAT: ${{ secrets.OPEN_VSX_REGISTRY }} # Open VSX 个人访问令牌
+
+      # 步骤 11: 创建并推送版本标签
+      - name: Create and push version tag
+        env:
+          TAG_NAME: ${{ steps.meta.outputs.tag }}
+        run: |
+          # 配置 Git 用户信息（使用 GitHub Actions 机器用户）
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # 创建带注释的标签并推送
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
+
+      # 步骤 12: 创建 GitHub Release（附 VSIX；template 等资源已打包进 VSIX，无需单独附上）
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: 发布 ${{ steps.meta.outputs.tag }}
+          generate_release_notes: true
+          body: |
+            ## 版本 ${{ steps.meta.outputs.tag }}
+
+            | 检查项 | 结果 |
+            |-------|--------|
+            | VS Code Marketplace | ✅ 已发布 |
+            | Open VSX Registry | ✅ 已发布 |
+            | 标签与 package.json 版本 | ✅ 一致 |
+
+            ### 安装方式
+
+            - 市场安装：VS Code 扩展面板搜索 `vssm-md`
+            - 离线安装：下载下方 `.vsix` 后执行 `code --install-extension <文件名>`
+          files: |
+            ${{ steps.meta.outputs.vsix }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 自动生成的 token
