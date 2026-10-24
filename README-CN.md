@@ -110,6 +110,13 @@ npm run package  # 生成 .vsix
 
 若自行构建并发布本扩展，请参阅 [docs/telemetry.md](docs/telemetry.md) 配置 Azure Application Insights 及示例查询。
 
+## 项目来源
+
+本项目 fork 自 [cweijan/vscode-office](https://github.com/cweijan/vscode-office)，在其基础上精简为专注 Markdown 编辑器的扩展。Fork 起点为上游提交 [`2755c6f`](https://github.com/cweijan/vscode-office/commit/2755c6f)（Merge branch 'dev'，2026-10-15，对应版本 4.2.2），此提交之前的全部提交均为继承自上游的历史记录。本项目仅供自己学习使用。
+
 ## Credits
 
 - Markdown 编辑器: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)
+
+---
+*本文档由 markdowncli 技能辅助生成*

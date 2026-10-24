@@ -110,6 +110,13 @@ You can also disable all VS Code telemetry in **Settings → Application → Tel
 
 If you build and publish this extension yourself, see [docs/telemetry.md](docs/telemetry.md) for Azure Application Insights setup and sample queries.
 
+## Origin
+
+This project is forked from [cweijan/vscode-office](https://github.com/cweijan/vscode-office) and trimmed down to focus on its Markdown editor. The fork point is upstream commit [`2755c6f`](https://github.com/cweijan/vscode-office/commit/2755c6f) (Merge branch 'dev', 2026-10-15, version 4.2.2). All commits before it in this repository are inherited upstream history. This fork is maintained for personal learning use only.
+
 ## Credits
 
 - Markdown editor: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)
+
+---
+*本文档由 markdowncli 技能辅助生成*
