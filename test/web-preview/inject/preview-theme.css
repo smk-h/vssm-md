@@ -1,0 +1,83 @@
+/* 模拟 VS Code webview 自动注入的主题变量（近似 Dark Modern / Light Modern）。
+   server.mjs 会在伺服 resource/markdown/index.html 时把本文件内容注入 <head>。 */
+html[data-preview-theme="dark"],
+html:not([data-preview-theme]) {
+  --vscode-editor-background: #1f1f1f;
+  --vscode-editor-foreground: #cccccc;
+  --vscode-font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  --vscode-font-size: 13px;
+  --vscode-font-weight: normal;
+  --vscode-editor-font-family: Consolas, "Courier New", monospace;
+  --vscode-editor-font-size: 13px;
+  --vscode-editor-font-weight: normal;
+  --vscode-foreground: #cccccc;
+  --vscode-descriptionForeground: #9d9d9d;
+  --vscode-focusBorder: #0078d4;
+  --vscode-badge-background: #4d4d4d;
+  --vscode-badge-foreground: #ffffff;
+  --vscode-dropdown-background: #313131;
+  --vscode-dropdown-foreground: #cccccc;
+  --vscode-input-background: #313131;
+  --vscode-input-foreground: #cccccc;
+  --vscode-inputBorder: #3c3c3c;
+  --vscode-button-background: #0e639c;
+  --vscode-button-foreground: #ffffff;
+  --vscode-button-secondaryBackground: #3a3d41;
+  --vscode-button-secondaryForeground: #ffffff;
+  --vscode-charts-foreground: #cccccc;
+  --vscode-charts-blue: #3794ff;
+  --vscode-charts-green: #89d185;
+  --vscode-charts-orange: #d18616;
+  --vscode-charts-purple: #b180d7;
+  --vscode-charts-red: #f14c4c;
+  --vscode-charts-yellow: #cca700;
+  --vscode-editorWidget-background: #252526;
+  --vscode-editorWidget-foreground: #cccccc;
+  --vscode-editorWidget-border: #454545;
+  --vscode-list-hoverBackground: #2a2d2e;
+  --vscode-list-activeSelectionBackground: #04395e;
+}
+
+html[data-preview-theme="light"] {
+  --vscode-editor-background: #ffffff;
+  --vscode-editor-foreground: #3b3b3b;
+  --vscode-font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  --vscode-font-size: 13px;
+  --vscode-font-weight: normal;
+  --vscode-editor-font-family: Consolas, "Courier New", monospace;
+  --vscode-editor-font-size: 13px;
+  --vscode-editor-font-weight: normal;
+  --vscode-foreground: #3b3b3b;
+  --vscode-descriptionForeground: #616161;
+  --vscode-focusBorder: #005fb8;
+  --vscode-badge-background: #c4c4c4;
+  --vscode-badge-foreground: #ffffff;
+  --vscode-dropdown-background: #ffffff;
+  --vscode-dropdown-foreground: #3b3b3b;
+  --vscode-input-background: #ffffff;
+  --vscode-input-foreground: #3b3b3b;
+  --vscode-inputBorder: #cecece;
+  --vscode-button-background: #005fb8;
+  --vscode-button-foreground: #ffffff;
+  --vscode-button-secondaryBackground: #e4e6f1;
+  --vscode-button-secondaryForeground: #ffffff;
+  --vscode-charts-foreground: #3b3b3b;
+  --vscode-charts-blue: #005fb8;
+  --vscode-charts-green: #388a34;
+  --vscode-charts-orange: #c2711c;
+  --vscode-charts-purple: #82448e;
+  --vscode-charts-red: #c43139;
+  --vscode-charts-yellow: #9e7508;
+  --vscode-editorWidget-background: #ffffff;
+  --vscode-editorWidget-foreground: #3b3b3b;
+  --vscode-editorWidget-border: #cecece;
+  --vscode-list-hoverBackground: #e8e8e8;
+  --vscode-list-activeSelectionBackground: #0060c0;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}

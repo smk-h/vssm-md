@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>vssm-md · 浏览器预览</title>
+<link rel="stylesheet" href="/preview/host/host.css">
+</head>
+<body>
+  <div id="bar">
+    <b>vssm-md 浏览器预览</b>
+    <button id="theme">切换主题</button>
+    <button id="open">打开本地</button>
+    <button id="download">导出</button>
+    <button id="reset">示例文档</button>
+    <span id="cur"></span>
+    <span id="log"></span>
+  </div>
+  <div id="main">
+    <div id="side">
+      <div id="side-head"><span>test/markdown</span><button id="newfile" title="新建 .md">＋</button></div>
+      <div id="tree">加载中…</div>
+    </div>
+    <iframe id="frame"></iframe>
+  </div>
+  <input id="file" type="file" accept=".md,.markdown,.txt" hidden>
+  <script src="/preview/host/host.js"></script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+/* mock 宿主页样式：顶栏 + 左侧目录树 + 右侧编辑器 iframe */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+#bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #181818;
+  color: #ccc;
+  font-size: 12px;
+  border-bottom: 1px solid #333;
+  flex: none;
+}
+
+#bar button {
+  padding: 3px 10px;
+  font-size: 12px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #252526;
+  color: #ccc;
+  cursor: pointer;
+}
+
+#bar button:hover {
+  background: #2a2d2e;
+}
+
+#cur {
+  color: #6fb3ff;
+}
+
+#log {
+  margin-left: auto;
+  color: #8a8a8a;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#side {
+  width: 210px;
+  flex: none;
+  background: #1b1b1b;
+  color: #bbb;
+  border-right: 1px solid #333;
+  overflow-y: auto;
+  font-size: 12px;
+  user-select: none;
+}
+
+#side-head {
+  position: sticky;
+  top: 0;
+  padding: 6px 10px;
+  background: #1b1b1b;
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#side-head button {
+  border: 0;
+  background: none;
+  color: #6fb3ff;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+#tree {
+  padding: 4px 0 12px;
+}
+
+.dir {
+  padding: 3px 8px;
+  color: #9a9a9a;
+  cursor: pointer;
+}
+
+.dir:before {
+  content: "▸ ";
+}
+
+.dir.open:before {
+  content: "▾ ";
+}
+
+.dir-children {
+  display: none;
+}
+
+.dir.open + .dir-children {
+  display: block;
+}
+
+.file {
+  display: flex;
+  align-items: center;
+  padding: 3px 8px 3px 20px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.file:hover {
+  background: #242424;
+}
+
+.file.active {
+  background: #04395e;
+  color: #fff;
+}
+
+.file .name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file .del {
+  border: 0;
+  background: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 4px;
+  visibility: hidden;
+}
+
+.file:hover .del {
+  visibility: visible;
+}
+
+.file .del:hover {
+  color: #f14c4c;
+}
+
+#frame {
+  flex: 1;
+  border: 0;
+  width: 100%;
+  min-width: 0;
+}
