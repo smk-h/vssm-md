@@ -3,6 +3,20 @@ import { observeWorkspaceAbsoluteImages, createMarkdownValueReader, restoreWorks
 import { mapVscodeLanguageToVditorLang } from "./lang.js";
 import { bindLinkErrors } from "./linkError.js";
 
+// 从来源 URL 提取真实文件名，替换剪贴板位图的通用名（image.png）；
+// URL 无可用名字（无扩展名/解析失败）时返回 null，由调用方退回原文件名
+const renameFileFromUrl = (file, url) => {
+  try {
+    const raw = decodeURIComponent(new URL(url).pathname.split('/').pop() || '');
+    if (!raw || !/\.[A-Za-z0-9]{1,8}$/.test(raw)) return null;
+    const safe = raw.replace(/[\\/:*?"<>|]/g, '');
+    if (!safe || safe.startsWith('.')) return null;
+    return new File([file], safe, { type: file.type });
+  } catch (e) {
+    return null;
+  }
+};
+
 handler.on("open", async (md) => {
   const { content, rootPath, workspaceBaseUrl, documentCacheId, pendingFragment, shouldRestoreFocus, config, fileName } = md;
   window.__officeMarkdownFileName = fileName || 'Note';
@@ -95,16 +109,25 @@ handler.on("open", async (md) => {
     changeImageSettings(patch) {
       handler.emit('imageSettings', patch)
     },
-    // 粘贴单一图片 URL / 网页图片时触发；按规则决定下载落盘或保持原样
-    onPasteWebImage(url) {
+    // 粘贴单一图片 URL / 网页图片时触发；返回 true 表示已接管本次粘贴
+    onPasteWebImage(url, files) {
       const settings = editor?.vditor?.options?.imageSettings || {}
       const rules = editor?.vditor?.options?.imageRules || {}
       const action = settings.insertAction || 'legacy'
-      if (rules.applyToWeb === false || action === 'none' || action === 'legacy') {
-        editor.insertMarkdown(url)
-        return
+      const rulesActive = rules.applyToWeb !== false && action !== 'none' && action !== 'legacy'
+      if (!rulesActive) {
+        // 规则未启用：走原渲染（远程图直接显示 / URL 保持链接文本）
+        return false
+      }
+      if (files && files.length && editor?.vditor?.options?.upload?.handler) {
+        // 剪贴板已携带图片位图，直接按本地图片规则落盘，无需再走网络下载；
+        // 文件名优先取来源 URL 里的真实名字，替换剪贴板位图的通用名（image.png）
+        const named = renameFileFromUrl(files[0], url)
+        editor.vditor.options.upload.handler(named ? [named] : [...files])
+        return true
       }
       handler.emit('imgUrl', url)
+      return true
     },
     onSettingsChange(settings) {
       handler.emit('syncViewerSettings', settings)

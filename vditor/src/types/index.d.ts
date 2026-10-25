@@ -607,8 +607,12 @@ interface IOptions {
     imageSettings?: IImageSettings;
     /** 图像设置面板变更回调 */
     changeImageSettings?(patch: Partial<IImageSettings>): void;
-    /** 粘贴网络图片 URL 时触发（core 检测到单一图片链接后调用），由宿主决定下载落盘或保持原样 */
-    onPasteWebImage?(url: string): void;
+    /**
+     * 粘贴网络图片 URL 时触发（core 检测到单一图片链接后调用）。
+     * 返回 true 表示已处理（下载落盘或按位图上传），core 终止本次粘贴；
+     * 返回 false/null 表示规则未启用，core 走原渲染路径保持旧行为。
+     */
+    onPasteWebImage?(url: string, files?: File[]): boolean | void;
     /** 配置自建 CDN 地址。默认值: 'https://unpkg.com/vditor@${VDITOR_VERSION}' */
     cdn?: string;
     /** tab 键操作字符串，支持 \t 及任意字符串 */

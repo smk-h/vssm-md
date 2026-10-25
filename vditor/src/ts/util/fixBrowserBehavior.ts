@@ -1835,11 +1835,13 @@ export const paste = async (vditor: IVditor, event: (ClipboardEvent | DragEvent)
         pastedFromMarkdown = true;
         callback.pasteCode(code);
     } else {
-        // 纯文本本身是图片 URL 时，交给宿主按图像规则处理（需在 linkify 改写前判断）
+        // 纯文本本身是图片 URL 时，交给宿主按图像规则处理（需在 linkify 改写前判断）；
+        // 回调返回 false 表示规则未启用，走原 Markdown 渲染保持旧行为
         const plainImageUrl = extractImageUrlFromPlain(textPlain);
         if (plainImageUrl && vditor.options.onPasteWebImage) {
-            vditor.options.onPasteWebImage(plainImageUrl);
-            return;
+            if (vditor.options.onPasteWebImage(plainImageUrl)) {
+                return;
+            }
         }
         let preparedPlain = textPlain;
         if (textPlain.trim() !== "") {
@@ -1858,14 +1860,16 @@ export const paste = async (vditor: IVditor, event: (ClipboardEvent | DragEvent)
             tempElement.querySelectorAll(".vditor-copy").forEach((e) => {
                 e.remove();
             });
-            // 整段内容只有一张网络图片时（如从浏览器复制图片），交给宿主按图像规则落盘
+            // 整段内容只有一张网络图片时（如从浏览器复制图片），交给宿主按图像规则落盘；
+            // 回调返回 false 表示规则未启用，走原 HTML 渲染保持旧行为
             const htmlImages = tempElement.querySelectorAll("img");
             const singleWebImage = htmlImages.length === 1
                 && tempElement.textContent!.trim() === ""
                 && /^https?:\/\//i.test(htmlImages[0].getAttribute("src") || "");
             if (singleWebImage && vditor.options.onPasteWebImage) {
-                vditor.options.onPasteWebImage(htmlImages[0].getAttribute("src")!);
-                return;
+                if (vditor.options.onPasteWebImage(htmlImages[0].getAttribute("src")!, files.length > 0 ? files : undefined)) {
+                    return;
+                }
             }
             if (vditor.currentMode === "ir") {
                 renderers.HTML2VditorIRDOM = { renderLinkDest };
@@ -1917,8 +1921,7 @@ export const paste = async (vditor: IVditor, event: (ClipboardEvent | DragEvent)
             }
             markOutlineEditing(vditor);
             vditor.outline.render(vditor);
-        }
-    }
+        }    }
     const blockElement = hasClosestBlock(getEditorRange(vditor).startContainer);
     if (blockElement && !pastedFromMarkdown) {
         // https://github.com/Vanessa219/vditor/issues/591

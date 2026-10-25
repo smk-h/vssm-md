@@ -100,13 +100,27 @@ const expandTemplate = (template: string, docName: string, ext: string, document
         .replace(/\$\{uuid\}/g, crypto.randomUUID().replace(/-/g, ''))
         .replace(/\$\{ext\}/g, ext);
 
-/** 生成落盘文件名：保留源文件名，剪贴板位图等无名数据用时间戳兜底 */
+/** 剪贴板位图的通用文件名（各截图软件都叫 image.png 之类），不能当作唯一名使用 */
+const GENERIC_IMAGE_STEM_RE = /^(image|blob|clipboard|screenshot|capture|paste|pasted|snap|截屏|截图|捕获|未命名)([-_. ]?\d+)?$/i;
+
+/** 生成落盘文件名：保留真实源文件名；剪贴板位图等无确切名的数据用时间戳兜底，避免同名互相覆盖 */
+/** 生成落盘文件名：保留真实源文件名；剪贴板位图等无确切名的数据用时间戳兜底，避免同名互相覆盖 */
+let lastImageStamp = 0;
+const uniqueImageStamp = () => {
+    const now = Date.now();
+    lastImageStamp = now <= lastImageStamp ? lastImageStamp + 1 : now;
+    return lastImageStamp;
+};
+
 export const buildImageFileName = (sourceName: string | undefined, ext: string): string => {
     const base = sourceName ? sanitizeName(sourceName) : '';
     if (base) {
-        return /\.[A-Za-z0-9]{1,8}$/.test(base) ? base : `${base}.${ext}`;
+        const stem = base.replace(/\.[A-Za-z0-9]{1,8}$/, '');
+        if (!GENERIC_IMAGE_STEM_RE.test(stem)) {
+            return /\.[A-Za-z0-9]{1,8}$/.test(base) ? base : `${base}.${ext}`;
+        }
     }
-    return `image-${Date.now()}.${ext}`;
+    return `image-${uniqueImageStamp()}.${ext}`;
 };
 
 export const resolveImageInsertPlan = (input: ImagePlanInput): ImageInsertPlan => {
