@@ -10,3 +10,5 @@ yarn.lock
 pnpm-lock.yaml
 pnpm-workspace.yaml
 test/output
+.tmp/*
+!.tmp/README.md
