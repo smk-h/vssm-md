@@ -43,7 +43,6 @@ export const setMobileOutlineDrawerOpen = (vditor: IVditor, open: boolean) => {
 const updateMobileOutlineTrigger = (menuBtn: HTMLButtonElement, open: boolean) => {
     menuBtn.classList.toggle(MOBILE_OUTLINE_TRIGGER_ACTIVE_CLASS, open);
     menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
-    menuBtn.innerHTML = open ? codicon("close") : codicon("menu");
 };
 
 const clearMobileOutlineUi = (vditor: IVditor) => {
@@ -133,7 +132,10 @@ export const initMobileOutlineMenu = (vditor: IVditor) => {
     menuBtn.setAttribute("aria-label", window.VditorI18n?.outline || "Outline");
     menuBtn.setAttribute("aria-expanded", "false");
     menuBtn.innerHTML = codicon("menu");
-    vditor.element.appendChild(menuBtn);
+    // 挂到内容区（.vditor-content 为 position:relative），按钮贴内容区顶部右上角，
+    // 不受工具栏换行后实际高度影响
+    const contentElement = vditor.element.querySelector(".vditor-content");
+    (contentElement ?? vditor.element).appendChild(menuBtn);
 
     const backdrop = document.createElement("div");
     backdrop.className = "vditor-outline__backdrop";

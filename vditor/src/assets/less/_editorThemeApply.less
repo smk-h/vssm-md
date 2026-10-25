@@ -17,10 +17,12 @@
   --vditor-outline-border: none;
   --vditor-outline-title-display: none;
   --vditor-root-background: var(--textarea-background-color, var(--bg-color));
-  --mobile-outline-trigger-size: 38px;
-  --mobile-outline-trigger-top: max(8px, env(safe-area-inset-top, 0px));
-  --mobile-outline-trigger-left: max(10px, env(safe-area-inset-left, 0px));
-  --mobile-outline-gap: 6px;
+  --mobile-outline-trigger-size: 32px;
+  --mobile-outline-trigger-top: 8px;
+  --mobile-outline-trigger-right: max(12px, env(safe-area-inset-right, 0px));
+  --mobile-outline-gap: 8px;
+  --mobile-outline-panel-width: min(62vw, 224px);
+  --mobile-outline-panel-height: min(60%, 420px);
 }
 
 #vditor[data-editor-theme] .vditor-mobile-outline-trigger,
@@ -40,9 +42,9 @@
 
     .vditor-mobile-outline-trigger {
       display: inline-flex;
-      position: fixed;
+      position: absolute;
       top: var(--mobile-outline-trigger-top);
-      left: var(--mobile-outline-trigger-left);
+      right: var(--mobile-outline-trigger-right);
       z-index: 201;
       align-items: center;
       justify-content: center;
@@ -51,7 +53,7 @@
       margin: 0;
       padding: 0;
       border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
-      border-radius: 10px;
+      border-radius: 999px;
       background: color-mix(in srgb, var(--textarea-background-color, var(--bg-color)) 90%, transparent);
       color: var(--front-color, var(--toolbar-icon-color));
       box-shadow:
@@ -69,12 +71,12 @@
       touch-action: manipulation;
 
       .codicon {
-        font-size: 18px;
+        font-size: 16px;
         line-height: 1;
       }
 
       &:active {
-        transform: scale(0.96);
+        transform: scale(0.94);
       }
 
       &--active {
@@ -98,11 +100,13 @@
     }
 
     .vditor-outline {
-      position: fixed;
+      position: absolute;
       top: calc(var(--mobile-outline-trigger-top) + var(--mobile-outline-trigger-size) + var(--mobile-outline-gap));
-      left: var(--mobile-outline-trigger-left);
-      bottom: max(8px, env(safe-area-inset-bottom, 0px));
-      width: min(68vw, 228px) !important;
+      right: var(--mobile-outline-trigger-right);
+      left: auto;
+      bottom: auto;
+      height: var(--mobile-outline-panel-height);
+      width: var(--mobile-outline-panel-width) !important;
       max-width: none;
       z-index: 200;
       display: block !important;
@@ -116,8 +120,8 @@
       pointer-events: none;
 
       &--right {
-        left: var(--mobile-outline-trigger-left);
-        right: auto;
+        right: var(--mobile-outline-trigger-right);
+        left: auto;
       }
 
       &--mobile-open {
@@ -134,6 +138,9 @@
       &__content {
         height: 100%;
         padding: 8px 5px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-sizing: border-box;
 
         > ul > li > span > span {
           font-size: 13.5px;
