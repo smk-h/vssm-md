@@ -1,12 +1,20 @@
 /**
- * @file 本地打包 vssm-md 扩展并安装 / 干净卸载（不经市场，装的是本地 VSIX）。
+ * @file 本地打包安装 / 干净卸载 / 开发宿主调试 vssm-md 扩展（不经市场，装的是本地 VSIX）。
  * @module scripts/manage-vssm-md
  * @usage
  *   node scripts/manage-vssm-md.mjs install    # 本地打包并安装（npm run package → code --install-extension）
  *   node scripts/manage-vssm-md.mjs uninstall  # 卸载并清残留
+ *   node scripts/manage-vssm-md.mjs debug      # 编译 → 另开扩展开发宿主窗口
  * @details install 流程：npm run package（链式触发 vscode:prepublish 的 vite 生产构建）
  *          → 校验产物 vssm-md-<version>.vsix → code --install-extension --force 安装。
  *          vsce 依赖全局安装（npm i -g @vscode/vsce），缺失时 npm run package 会失败。
+ *
+ *          debug 流程只做 npm run build 后用 code --extensionDevelopmentPath 新开一个
+ *          开发宿主窗口：宿主直接从源码目录加载扩展，不读已安装版本，因此无需卸载与
+ *          VSIX 打包；但 build 仍需执行，扩展与 webview 都加载构建产物。窗口打开的
+ *          工作区固定为仓库根目录，与调用脚本时所在的 cwd 无关。
+ *          CLI 无法触发已开窗口的 Reload Window，且强杀宿主进程有丢失未保存内容的
+ *          风险，故刻意只开新窗、不动现有窗口。
  *
  *          卸载分两步，保证"干干净净"：
  *          1. code --uninstall-extension 走官方卸载（顺带更新 extensions.json/.obsolete）
@@ -27,7 +35,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /** @brief 仓库根目录（本文件位于 <root>/scripts/ 下），打包与安装均以此为基准 */
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -52,6 +60,9 @@ const userDataDir =
 
 /** @brief 扩展安装目录 ~/.vscode/extensions */
 const extensionsDir = path.join(os.homedir(), '.vscode', 'extensions');
+
+/** @brief 开发宿主专用配置目录：与默认实例隔离，避免目录复用把打开请求转去已开窗口 */
+const devProfileDir = path.join(os.tmpdir(), 'vssm-md-devhost');
 
 /**
  * @brief 以 shell 字符串方式执行命令（规避 Windows 下 code.cmd/npm.cmd 的转义问题）
@@ -122,8 +133,8 @@ function ensureCodeCli() {
   }
 }
 
-function install() {
-  ensureCodeCli();
+/** @brief 生产打包：npm run package（链式触发 vscode:prepublish）并校验 VSIX 产物 */
+function packageVsix() {
   console.log(`[vssm-md] 本地打包（${extName}@${version}）...`);
   if (!run('npm run package', { cwd: root })) {
     console.error('[vssm-md] 打包失败：请检查构建报错；若提示找不到 vsce，先执行 npm i -g @vscode/vsce');
@@ -133,7 +144,10 @@ function install() {
     console.error(`[vssm-md] 打包命令成功但未找到产物：${VSIX_PATH}`);
     process.exit(1);
   }
+}
 
+/** @brief 安装本地 VSIX 并回读确认 */
+function installVsix() {
   console.log(`[vssm-md] 安装本地 VSIX：${path.basename(VSIX_PATH)}`);
   if (!run(`code --install-extension "${VSIX_PATH}" --force`)) {
     console.error('[vssm-md] 安装失败，请查看上方 code CLI 输出');
@@ -141,6 +155,12 @@ function install() {
   }
   const found = findInstalled();
   console.log(found ? `[vssm-md] 安装成功：${found}` : '[vssm-md] 警告：安装命令成功但未在扩展列表中找到');
+}
+
+function install() {
+  ensureCodeCli();
+  packageVsix();
+  installVsix();
 }
 
 function uninstall() {
@@ -154,12 +174,42 @@ function uninstall() {
   console.log(removed ? `[vssm-md] 卸载完成，共清理 ${removed} 处残留` : '[vssm-md] 卸载完成，无磁盘残留');
 }
 
+/** @brief 另开扩展开发宿主窗口，打开本仓库工作目录并加载源码目录的扩展，不触碰已开窗口 */
+function openDevHost() {
+  console.log('[vssm-md] 打开扩展开发宿主窗口...');
+  // 独立 user-data-dir 让开发宿主跑成另一个 VS Code 实例：共用默认实例时，
+  // 打开"已被其他窗口开着的目录"会被目录复用规则转去那个窗口，开发宿主窗口落成空窗
+  const folderUri = pathToFileURL(root).href;
+  const cmd = [
+    'code',
+    `--user-data-dir="${devProfileDir}"`,
+    `--extensionDevelopmentPath="${root}"`,
+    `--folder-uri="${folderUri}"`,
+  ].join(' ');
+  if (!run(cmd)) {
+    console.error('[vssm-md] 开发宿主窗口启动失败，请查看上方 code CLI 输出');
+    process.exit(1);
+  }
+}
+
+function debug() {
+  ensureCodeCli();
+  console.log('[vssm-md] 编译扩展与 webview 产物（npm run build）...');
+  if (!run('npm run build', { cwd: root })) {
+    console.error('[vssm-md] 编译失败，请查看上方构建报错');
+    process.exit(1);
+  }
+  openDevHost();
+}
+
 const action = process.argv[2];
 if (action === 'install') {
   install();
 } else if (action === 'uninstall') {
   uninstall();
+} else if (action === 'debug') {
+  debug();
 } else {
-  console.error('用法：node scripts/manage-vssm-md.mjs <install|uninstall>');
+  console.error('用法：node scripts/manage-vssm-md.mjs <install|uninstall|debug>');
   process.exit(1);
 }
