@@ -93,6 +93,6 @@ export const codeMirrorPreviewRender = (element: HTMLElement | Document = docume
         if (!isPreviewCodeElement(code as HTMLElement)) {
             continue;
         }
-        mountPreviewCodeMirror(code.parentElement as HTMLElement, code as HTMLElement, false);
+        mountPreviewCodeMirror(code.parentElement as HTMLElement, code as HTMLElement, true);
     }
 };

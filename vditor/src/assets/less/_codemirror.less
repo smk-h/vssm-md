@@ -688,6 +688,25 @@
   .cm-line {
     padding: 0 18px;
   }
+
+  .cm-gutters {
+    background-color: transparent;
+    border-right: 0;
+  }
+
+  .cm-lineNumbers {
+    .cm-gutterElement {
+      min-width: 2.4em;
+      padding: 0 8px 0 0;
+      text-align: right;
+      color: color-mix(in srgb, var(--cm-fg-color, var(--toolbar-icon-color)) 40%, transparent);
+      user-select: none;
+    }
+  }
+
+  .cm-activeLineGutter {
+    background-color: transparent;
+  }
 }
 
 .vditor-html-inline-popover {

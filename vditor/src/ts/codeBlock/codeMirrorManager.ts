@@ -1,7 +1,7 @@
 import { indentLess, redo, redoDepth, undo, undoDepth } from "@codemirror/commands";
 import { LanguageSupport } from "@codemirror/language";
 import { Compartment, EditorSelection, Prec } from "@codemirror/state";
-import { EditorView, keymap } from "@codemirror/view";
+import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 
 import { expandMarker } from "../ir/expandMarker";
 import { processAfterRender, recordHistory as recordIrHistory } from "../ir/process";
@@ -1627,6 +1627,7 @@ const mountCodeMirror = (blockElement: HTMLElement, vditor: IVditor, force = fal
         parent: editPre,
         extensions: [
             vditorCodeMirrorSetup,
+            lineNumbers(),
             keymap.of(stopHandledCodeMirrorKeymap([{ key: "Tab", run: insertLiteralTab, shift: indentLess }])),
             buildCodeMirrorNavigationKeymap(vditor, blockElement),
             languageCompartment.of([]),
