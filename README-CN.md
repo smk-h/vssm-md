@@ -76,7 +76,7 @@ npm run dev:web
 
 在「运行和调试」中选择 **Extension (Web)**。
 
-Markdown 编辑器 webview 由 `vditor/` 内嵌源码构建到 `resource/markdown/`；开发模式下修改 vditor 源码会自动重新构建。
+Markdown 编辑器 webview 由 `vditor/` 内嵌源码构建到 `resource/markdown/`；开发模式下修改 vditor 源码会自动重新构建。Markdown 引擎为 [Lute](https://github.com/88250/lute) v1.7.3，内嵌于 `vditor/src/js/lute/lute.min.js`，由上游 Go 源码经 GopherJS 编译生成，属于构建产物无法直接修改；如需调整解析/渲染等引擎行为，需修改 Go 源码并重新编译。
 
 ### 构建与打包
 
@@ -117,6 +117,7 @@ npm run package  # 生成 .vsix
 ## Credits
 
 - Markdown 编辑器: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)
+- Markdown 引擎: [88250/lute](https://github.com/88250/lute) v1.7.3（GopherJS 编译）
 
 ---
 *本文档由 markdowncli 技能辅助生成*

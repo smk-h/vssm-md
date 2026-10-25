@@ -76,7 +76,7 @@ npm run dev:web
 
 Choose **Extension (Web)** from Run and Debug.
 
-The Markdown editor webview is built from the embedded vditor source in `vditor/` into `resource/markdown/`; editing vditor sources rebuilds it automatically in dev mode.
+The Markdown editor webview is built from the embedded vditor source in `vditor/` into `resource/markdown/`; editing vditor sources rebuilds it automatically in dev mode. The Markdown engine is [Lute](https://github.com/88250/lute) v1.7.3, vendored at `vditor/src/js/lute/lute.min.js` and compiled from the Go sources via GopherJS; it is a build artifact that cannot be edited directly, so changing engine behavior (parsing/rendering rules) requires patching the Go sources and recompiling.
 
 ### Build & package
 
@@ -117,6 +117,7 @@ This project is forked from [cweijan/vscode-office](https://github.com/cweijan/v
 ## Credits
 
 - Markdown editor: [Vanessa219/vditor](https://github.com/Vanessa219/vditor)
+- Markdown engine: [88250/lute](https://github.com/88250/lute) v1.7.3 (GopherJS build)
 
 ---
 *本文档由 markdowncli 技能辅助生成*
