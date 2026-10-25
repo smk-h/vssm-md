@@ -3,7 +3,7 @@ import {
     refreshSettingsPanel,
     SETTINGS_PANEL_CLASS,
     IMAGE_INSERT_ACTION_KEY,
-    IMAGE_INSERT_ACTION_OPTIONS,
+    getImageInsertActionOptions,
     IMAGE_SETTINGS_KEY_PREFIX,
 } from "../ui/settingsPanel";
 import { getEventName } from "../util/compatibility";
@@ -57,7 +57,7 @@ const DROPDOWN_OPTIONS_MAP: Record<string, readonly { label: string; value: stri
     [BOLD_COLOR_KEY]: getBoldColorOptions,
     [PAGE_WIDTH_KEY]: PAGE_WIDTH_OPTIONS,
     [CODE_BLOCK_MAX_HEIGHT_KEY]: CODE_BLOCK_MAX_HEIGHT_OPTIONS,
-    [IMAGE_INSERT_ACTION_KEY]: IMAGE_INSERT_ACTION_OPTIONS,
+    [IMAGE_INSERT_ACTION_KEY]: getImageInsertActionOptions,
 };
 
 const isImageSettingsKey = (key: string) => key.startsWith(IMAGE_SETTINGS_KEY_PREFIX);

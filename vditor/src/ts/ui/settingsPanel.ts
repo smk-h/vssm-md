@@ -39,15 +39,19 @@ export const SETTINGS_PANEL_CLASS = "vditor-settings-panel";
 export const IMAGE_SETTINGS_KEY_PREFIX = "__image.";
 export const IMAGE_INSERT_ACTION_KEY = `${IMAGE_SETTINGS_KEY_PREFIX}insertAction`;
 
-export const IMAGE_INSERT_ACTION_OPTIONS = [
-    { value: "legacy", label: "Classic (pasterImgPath)" },
-    { value: "none", label: "No special action" },
-    { value: "currentFolder", label: "Copy to current folder (./)" },
-    { value: "assetsFolder", label: "Copy to ./assets" },
-    { value: "perFileAssets", label: "Copy to ./${filename}.assets" },
-    { value: "custom", label: "Copy to custom path" },
-    { value: "upload", label: "Upload image" },
-] as const;
+/** 图像插入模式的下拉选项：label 走语言包，缺失键回退英文 */
+export const getImageInsertActionOptions = (): { label: string; value: string }[] => {
+    const i18n = window.VditorI18n;
+    return [
+        { value: "legacy", label: i18n.imageActionLegacy ?? "Classic (pasterImgPath)" },
+        { value: "none", label: i18n.imageActionNone ?? "No special action" },
+        { value: "currentFolder", label: i18n.imageActionCurrentFolder ?? "Copy image to current folder (./)" },
+        { value: "assetsFolder", label: i18n.imageActionAssets ?? "Copy image to ./assets" },
+        { value: "perFileAssets", label: i18n.imageActionPerFileAssets ?? "Copy image to ./${filename}.assets" },
+        { value: "custom", label: i18n.imageActionCustom ?? "Copy image to custom path" },
+        { value: "upload", label: i18n.imageActionUpload ?? "Upload image" },
+    ];
+};
 
 const escapeAttr = (value: string) =>
     value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
@@ -115,29 +119,30 @@ const buildToggleHTML = (key: string, label: string, checked: boolean) =>
         <button type="button" class="${SETTINGS_PANEL_CLASS}__toggle${checked ? ` ${SETTINGS_PANEL_CLASS}__toggle--on` : ""}" data-toggle-trigger data-toggle-key="${key}" role="switch" aria-checked="${checked}"></button>
     </div>`;
 
-const buildImageTextInputHTML = (field: "customPath" | "uploadServer", value: string) =>
+const buildImageTextInputHTML = (field: "customPath" | "uploadServer", label: string, value: string) =>
     `<div class="${SETTINGS_PANEL_CLASS}__toggle-row">
-        <span class="${SETTINGS_PANEL_CLASS}__toggle-label">${field === "customPath" ? "Path" : "Server"}</span>
+        <span class="${SETTINGS_PANEL_CLASS}__toggle-label">${label}</span>
         <input type="text" class="${SETTINGS_PANEL_CLASS}__ai-prompt-input ${SETTINGS_PANEL_CLASS}__image-input" data-image-input="${field}" value="${escapeAttr(value)}">
     </div>`;
 
 export const buildImageSettingsSectionHTML = (settings: IImageSettings = {}) => {
+    const i18n = window.VditorI18n;
     const action = settings.insertAction || "legacy";
     let html = `<div class="${SETTINGS_PANEL_CLASS}__section">
-        <div class="${SETTINGS_PANEL_CLASS}__title">Image</div>
+        <div class="${SETTINGS_PANEL_CLASS}__title">${i18n.image ?? "Image"}</div>
         <div class="${SETTINGS_PANEL_CLASS}__group">
-            ${buildDropdownHTML(IMAGE_INSERT_ACTION_KEY, "When Insert", IMAGE_INSERT_ACTION_OPTIONS, action)}`;
+            ${buildDropdownHTML(IMAGE_INSERT_ACTION_KEY, i18n.imageWhenInsert ?? "When Insert", getImageInsertActionOptions(), action)}`;
     if (action === "custom") {
-        html += buildImageTextInputHTML("customPath", settings.customPath || "./${filename}/img");
+        html += buildImageTextInputHTML("customPath", i18n.imageSavePath ?? "Path", settings.customPath || "./${filename}/img");
     } else if (action === "upload") {
-        html += buildImageTextInputHTML("uploadServer", settings.uploadServer || "http://127.0.0.1:36677/upload");
+        html += buildImageTextInputHTML("uploadServer", i18n.imageUploadServer ?? "Server", settings.uploadServer || "http://127.0.0.1:36677/upload");
     }
-    html += buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}applyToLocal`, "Apply rules to local images", settings.applyToLocal !== false)
-        + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}applyToWeb`, "Apply rules to network images", settings.applyToWeb !== false)
-        + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}allowYamlUpload`, "Allow YAML to trigger upload", settings.allowYamlUpload !== false)
-        + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}preferRelativePath`, "Use relative path if possible", settings.preferRelativePath !== false)
-        + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}prefixDotSlash`, "Add ./ to relative paths", settings.prefixDotSlash !== false)
-        + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}escapeUrl`, "Auto escape image URL", settings.escapeUrl === true);
+    html += buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}applyToLocal`, i18n.imageApplyToLocal ?? "Apply rules to local images", settings.applyToLocal !== false)
+        + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}applyToWeb`, i18n.imageApplyToWeb ?? "Apply rules to network images", settings.applyToWeb !== false)
+        + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}allowYamlUpload`, i18n.imageYamlUpload ?? "Allow YAML to trigger upload", settings.allowYamlUpload !== false)
+        + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}preferRelativePath`, i18n.imagePreferRelative ?? "Use relative path if possible", settings.preferRelativePath !== false)
+        + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}prefixDotSlash`, i18n.imageDotSlash ?? "Add ./ to relative paths", settings.prefixDotSlash !== false)
+        + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}escapeUrl`, i18n.imageEscapeUrl ?? "Auto escape image URL", settings.escapeUrl === true);
     html += `</div></div>`;
     return html;
 };
