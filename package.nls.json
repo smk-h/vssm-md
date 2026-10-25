@@ -21,5 +21,6 @@
 	"ext.markdown.customAiUrlRequired": "Custom AI: API URL is required.",
 	"ext.markdown.customAiPolishFailed": "Custom AI Polish failed: $1",
 	"ext.markdown.selectImage": "Select Image",
+	"ext.markdown.imageUploadFailed": "Image upload failed. The image was saved into the per-document assets folder.",
 	"ext.markdown.statusBar": "Line $1 Count $2"
 }

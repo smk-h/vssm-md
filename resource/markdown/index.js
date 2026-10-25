@@ -8,7 +8,8 @@ handler.on("open", async (md) => {
   window.__officeMarkdownFileName = fileName || 'Note';
   const {
     language, isWeb, isDev, markdown,
-    editMode, editorTheme, codeMirrorTheme, mermaidTheme
+    editMode, editorTheme, codeMirrorTheme, mermaidTheme,
+    imageRules, imageSettings
   } = config;
   if (isWeb) {
     document.body.classList.add('is-web')
@@ -40,6 +41,8 @@ handler.on("open", async (md) => {
     editorTheme,
     codeMirrorTheme,
     mermaidTheme,
+    imageRules,
+    imageSettings,
     lang: vditorLang,
     tab: '\t',
     toolbar: await getToolbar(rootPath, () => {
@@ -89,6 +92,20 @@ handler.on("open", async (md) => {
     changeEditMode(mode) {
       handler.emit('editMode', mode)
     },
+    changeImageSettings(patch) {
+      handler.emit('imageSettings', patch)
+    },
+    // 粘贴单一图片 URL / 网页图片时触发；按规则决定下载落盘或保持原样
+    onPasteWebImage(url) {
+      const settings = editor?.vditor?.options?.imageSettings || {}
+      const rules = editor?.vditor?.options?.imageRules || {}
+      const action = settings.insertAction || 'legacy'
+      if (rules.applyToWeb === false || action === 'none' || action === 'legacy') {
+        editor.insertMarkdown(url)
+        return
+      }
+      handler.emit('imgUrl', url)
+    },
     onSettingsChange(settings) {
       handler.emit('syncViewerSettings', settings)
     },
@@ -104,10 +121,19 @@ handler.on("open", async (md) => {
       handler(files) {
         const file = files[0];
         const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+        // 不对本地图片应用规则时，剪贴板位图数据无处可引用，内联为 data URI
+        if (editor?.vditor?.options?.imageRules?.applyToLocal === false) {
+          const dataReader = new FileReader();
+          dataReader.readAsDataURL(file);
+          dataReader.onloadend = () => {
+            editor?.insertMarkdown(`![${file.name}](${dataReader.result})`);
+          };
+          return;
+        }
         let reader = new FileReader();
         reader.readAsBinaryString(file);
         reader.onloadend = () => {
-          handler.emit("img", { data: reader.result, ext })
+          handler.emit("img", { data: reader.result, ext, name: file.name })
         };
       }
     },
@@ -158,6 +184,12 @@ handler.on("open", async (md) => {
         }
         if (update.editMode !== undefined) {
           editor.switchEditMode(update.editMode);
+        }
+        if (update.imageRules !== undefined) {
+          editor.vditor.options.imageRules = { ...(editor.vditor.options.imageRules || {}), ...update.imageRules };
+        }
+        if (update.imageSettings !== undefined) {
+          editor.vditor.options.imageSettings = { ...(editor.vditor.options.imageSettings || {}), ...update.imageSettings };
         }
       });
       handler.on("update", content => {

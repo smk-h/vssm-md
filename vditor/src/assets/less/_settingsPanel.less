@@ -507,6 +507,14 @@
     .vditor-popover-field();
   }
 
+  // 图像设置里 Label + 输入框同行，输入框占满剩余宽度
+  &__image-input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    text-align: right;
+  }
+
   &__ai-prompt-textarea {
     resize: vertical;
     min-height: 64px;

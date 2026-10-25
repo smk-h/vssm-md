@@ -13,6 +13,7 @@ export const mkdirSync = stubFn('mkdirSync');
 export const copyFileSync = stubFn('copyFileSync');
 export const readdirSync = () => [] as string[];
 export const renameSync = stubFn('renameSync');
+export const rmSync = stubFn('rmSync');
 export const lstatSync = () => ({ isDirectory: () => false, isFile: () => true });
 export const rm = stubFn('rm');
 export const createReadStream = stubFn('createReadStream');
@@ -27,6 +28,8 @@ export default {
     mkdirSync,
     copyFileSync,
     readdirSync,
+    renameSync,
+    rmSync,
     rm,
     createReadStream,
     promises,

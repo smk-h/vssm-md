@@ -2,6 +2,9 @@ import {
     buildSettingsPanelHTML,
     refreshSettingsPanel,
     SETTINGS_PANEL_CLASS,
+    IMAGE_INSERT_ACTION_KEY,
+    IMAGE_INSERT_ACTION_OPTIONS,
+    IMAGE_SETTINGS_KEY_PREFIX,
 } from "../ui/settingsPanel";
 import { getEventName } from "../util/compatibility";
 import { setEditMode } from "./EditMode";
@@ -54,6 +57,23 @@ const DROPDOWN_OPTIONS_MAP: Record<string, readonly { label: string; value: stri
     [BOLD_COLOR_KEY]: getBoldColorOptions,
     [PAGE_WIDTH_KEY]: PAGE_WIDTH_OPTIONS,
     [CODE_BLOCK_MAX_HEIGHT_KEY]: CODE_BLOCK_MAX_HEIGHT_OPTIONS,
+    [IMAGE_INSERT_ACTION_KEY]: IMAGE_INSERT_ACTION_OPTIONS,
+};
+
+const isImageSettingsKey = (key: string) => key.startsWith(IMAGE_SETTINGS_KEY_PREFIX);
+
+/** 图像设置保存在宿主侧（VS Code 配置），本地合并后整体刷新面板以联动 Path/Server 输入框的显隐 */
+const applyImageSettings = (vditor: IVditor, panelElement: HTMLElement, patch: Partial<IImageSettings>) => {
+    const merged: IImageSettings = { ...(vditor.options.imageSettings || {}), ...patch };
+    vditor.options.imageSettings = merged;
+    vditor.options.imageRules = {
+        applyToLocal: merged.applyToLocal !== false,
+        applyToWeb: merged.applyToWeb !== false,
+    };
+    if (typeof vditor.options.changeImageSettings === "function") {
+        vditor.options.changeImageSettings(patch);
+    }
+    panelElement.innerHTML = buildSettingsPanelHTML(vditor);
 };
 
 const resolveDropdownOptions = (key: string) => {
@@ -128,7 +148,9 @@ export class Settings extends MenuItem {
         const openFloatingMenu = (trigger: HTMLElement, key: string) => {
             const options = resolveDropdownOptions(key);
             if (!options) return;
-            const currentValue = getDropdownCurrentValue(key, options[0].value);
+            const currentValue = isImageSettingsKey(key)
+                ? (vditor.options.imageSettings?.insertAction || "legacy")
+                : getDropdownCurrentValue(key, options[0].value);
 
             floatingMenu.innerHTML = options.map(o =>
                 `<button type="button" class="${SETTINGS_PANEL_CLASS}__dropdown-option${o.value === currentValue ? ` ${SETTINGS_PANEL_CLASS}__dropdown-option--current` : ""}" data-value="${o.value}" data-dropdown-key="${key}">${o.label}</button>`
@@ -162,6 +184,13 @@ export class Settings extends MenuItem {
             const key = option.getAttribute("data-dropdown-key") || "";
             const value = option.getAttribute("data-value") || "";
             const label = option.textContent || "";
+            if (isImageSettingsKey(key)) {
+                applyImageSettings(vditor, panelElement, { insertAction: value as IImageSettings["insertAction"] });
+                closeFloatingMenu();
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
             const storedValue = key === CODE_BLOCK_MAX_HEIGHT_KEY && value === CODE_BLOCK_MAX_HEIGHT_DEFAULT
                 ? undefined
                 : value;
@@ -247,6 +276,13 @@ export class Settings extends MenuItem {
             if (toggleTrigger) {
                 const key = toggleTrigger.getAttribute("data-toggle-key") || "";
                 const next = !toggleTrigger.classList.contains(`${SETTINGS_PANEL_CLASS}__toggle--on`);
+                if (isImageSettingsKey(key)) {
+                    const field = key.slice(IMAGE_SETTINGS_KEY_PREFIX.length);
+                    applyImageSettings(vditor, panelElement, { [field]: next } as Partial<IImageSettings>);
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
                 toggleTrigger.classList.toggle(`${SETTINGS_PANEL_CLASS}__toggle--on`, next);
                 toggleTrigger.setAttribute("aria-checked", String(next));
                 setGlobalLocalStorageSetting(key, next ? true : undefined);
@@ -327,6 +363,10 @@ export class Settings extends MenuItem {
         // Line height manual input
         panelElement.addEventListener("change", (event: Event) => {
             const input = event.target as HTMLInputElement;
+            if (input.dataset.imageInput) {
+                applyImageSettings(vditor, panelElement, { [input.dataset.imageInput]: input.value } as Partial<IImageSettings>);
+                return;
+            }
             if (input.dataset.lhValue !== undefined) {
                 const parsed = parseFloat(input.value);
                 const next = isNaN(parsed) ? LINE_HEIGHT_DEFAULT : Math.round(Math.min(LINE_HEIGHT_MAX, Math.max(LINE_HEIGHT_MIN, parsed)) * 10) / 10;

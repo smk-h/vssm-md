@@ -182,7 +182,70 @@
 					"vssm-md.pasterImgPath": {
 						"type": "string",
 						"default": "image/${fileName}/${now}.${ext}",
-						"description": "Markdown paste image path, variables: workspaceDir, fileName, now, date (YYYYMMDD), uuid, ext (file extension)."
+						"description": "Markdown paste image path, variables: workspaceDir, fileName, now, date (YYYYMMDD), uuid, ext (file extension). Only used when image.insertAction is \"legacy\"."
+					},
+					"vssm-md.image.insertAction": {
+						"type": "string",
+						"enum": [
+							"legacy",
+							"none",
+							"currentFolder",
+							"assetsFolder",
+							"perFileAssets",
+							"custom",
+							"upload"
+						],
+						"enumDescriptions": [
+							"Classic behavior: build path from vssm-md.pasterImgPath template.",
+							"No special action: local images are referenced as-is, not copied.",
+							"Copy image to the current folder (./).",
+							"Copy image to the ./${filename}.assets folder next to the document.",
+							"Copy image to the ./${filename}.assets folder (per-document assets folder).",
+							"Copy image to vssm-md.image.customPath (supports ${filename}).",
+							"Upload image to a PicGo-compatible HTTP server (vssm-md.image.uploadServer)."
+						],
+						"default": "legacy",
+						"markdownDescription": "Where to put images when pasting or inserting into the Markdown editor (Typora-style rules). Relative folders are resolved against the document folder."
+					},
+					"vssm-md.image.customPath": {
+						"type": "string",
+						"default": "./${filename}/img",
+						"markdownDescription": "Target folder for the \"custom\" insert action. A relative path starting with `./` or `../` (resolved against the document folder) or an absolute path. `${filename}` is the current document name; legacy variables ${workspaceDir}, ${fileName}, ${now}, ${date}, ${uuid}, ${ext} are also supported."
+					},
+					"vssm-md.image.applyToLocal": {
+						"type": "boolean",
+						"default": true,
+						"description": "Apply the insert action rules to local images (clipboard data, picked or dropped image files)."
+					},
+					"vssm-md.image.applyToWeb": {
+						"type": "boolean",
+						"default": true,
+						"description": "Apply the insert action rules to network images: pasting an image URL downloads it into the target folder instead of keeping the URL."
+					},
+					"vssm-md.image.allowYamlUpload": {
+						"type": "boolean",
+						"default": true,
+						"description": "Allow the `typora-copy-images-to: upload` YAML front matter to trigger image uploading."
+					},
+					"vssm-md.image.preferRelativePath": {
+						"type": "boolean",
+						"default": true,
+						"description": "Use a relative path in the generated image reference when the image is inside the document folder."
+					},
+					"vssm-md.image.prefixDotSlash": {
+						"type": "boolean",
+						"default": true,
+						"description": "Prefix relative image references with ./ (except ../ ones)."
+					},
+					"vssm-md.image.escapeUrl": {
+						"type": "boolean",
+						"default": false,
+						"description": "Percent-encode image URLs (spaces, non-ASCII, brackets) when inserting the reference."
+					},
+					"vssm-md.image.uploadServer": {
+						"type": "string",
+						"default": "http://127.0.0.1:36677/upload",
+						"description": "PicGo-compatible upload endpoint (POST {list:[path]} -> {result:[url]}) used by the \"upload\" insert action."
 					}
 				}
 			},

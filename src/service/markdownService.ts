@@ -1,4 +1,5 @@
 import { adjustImgPath } from "@/common/fileUtil";
+import { buildImageReferencePath, resolveImageInsertPlan } from "@/service/imageInsertRule";
 import { Output } from "@/common/Output";
 import { spawn } from 'child_process';
 import chromeFinder from 'chrome-finder';
@@ -132,9 +133,24 @@ export class MarkdownService {
         }
 
         const uri = document.uri;
-        const info = adjustImgPath(uri, 'png'), { fullPath } = info;
-        let { relPath } = info;
-        const imagePath = isAbsolute(fullPath) ? fullPath : `${dirname(uri.fsPath)}/${relPath}`.replace(/\\/g, "/");
+        const plan = resolveImageInsertPlan({ documentUri: uri, documentContent: document.getText(), ext: 'png' });
+        if (plan.kind === 'none') {
+            return;
+        }
+        let imagePath: string;
+        let relPath: string;
+        if (plan.kind === 'copy') {
+            imagePath = join(plan.targetDir, plan.fileName).replace(/\\/g, '/');
+            relPath = buildImageReferencePath(uri, imagePath);
+        } else if (plan.kind === 'upload') {
+            // 纯文本编辑器命令未接上传服务，退化为文档同名目录落盘
+            imagePath = join(dirname(uri.fsPath), `${parse(uri.fsPath).name}.assets`, plan.fileName).replace(/\\/g, '/');
+            relPath = buildImageReferencePath(uri, imagePath);
+        } else {
+            const info = adjustImgPath(uri, 'png');
+            relPath = info.relPath;
+            imagePath = isAbsolute(info.fullPath) ? info.fullPath : `${dirname(uri.fsPath)}/${relPath}`.replace(/\\/g, "/");
+        }
         this.createImgDir(imagePath);
         this.saveClipboardImageToFileAndGetPath(imagePath, async (savedImagePath) => {
             if (!savedImagePath) return;

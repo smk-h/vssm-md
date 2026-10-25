@@ -1,6 +1,17 @@
 import { adjustImgPath, getWorkspacePath } from '@/common/fileUtil';
-import { isAbsolute, parse, resolve } from 'path';
+import { dirname, isAbsolute, join, parse, resolve } from 'path';
+import { tmpdir } from 'os';
+import { rmSync, writeFileSync } from 'fs';
 import * as vscode from 'vscode';
+import {
+    buildImageFileName,
+    buildImageMarkdown,
+    buildImageReferencePath,
+    escapeReferenceUrl,
+    getImageRuleConfig,
+    resolveImageInsertPlan,
+    ImageRuleConfig,
+} from '@/service/imageInsertRule';
 import { extensionResource, getExtensionResourceRoots, readExtensionText } from '@/common/extensionResource';
 import { ensureParentDirectory } from '@/common/workspaceFs';
 import { Handler } from '../common/handler';
@@ -42,6 +53,18 @@ const MARKDOWN_SYNC_CONFIG_KEYS = [
     'codeMirrorTheme',
     'mermaidTheme',
 ] as const;
+
+const IMAGE_CONFIG_KEYS: (keyof ImageRuleConfig)[] = [
+    'insertAction',
+    'customPath',
+    'applyToLocal',
+    'applyToWeb',
+    'allowYamlUpload',
+    'preferRelativePath',
+    'prefixDotSlash',
+    'escapeUrl',
+    'uploadServer',
+];
 
 type MarkdownSyncConfigKey = typeof MARKDOWN_SYNC_CONFIG_KEYS[number];
 
@@ -90,6 +113,11 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
                 }
                 if (changed) {
                     broadcastToMarkdownWebviews('markdownConfig', patch);
+                }
+                if (IMAGE_CONFIG_KEYS.some((key) => event.affectsConfiguration(`vssm-md.image.${key}`))) {
+                    broadcastToMarkdownWebviews('markdownConfig', {
+                        imageRules: MarkdownEditorProvider.buildImageRules(),
+                    });
                 }
             }),
         );
@@ -275,9 +303,24 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
         }).on("img", async (payload) => {
             const imgData: string = typeof payload === 'string' ? payload : payload.data;
             const ext: string = typeof payload === 'string' ? 'png' : (payload.ext || 'png');
-            const imageMarkdown = await this.saveImageAndBuildMarkdown(uri, imgData, ext);
+            const sourceName: string | undefined = typeof payload === 'string' ? undefined : payload.name;
+            const imageMarkdown = await this.saveImageAndBuildMarkdown(uri, imgData, ext, {
+                sourceName,
+                documentContent: content,
+            });
             if (imageMarkdown) {
                 handler.emit('insertImageMarkdown', imageMarkdown);
+            }
+        }).on("imgUrl", async (url: string) => {
+            if (!/^https?:\/\//i.test(url || '')) {
+                return;
+            }
+            const imageMarkdown = await this.saveWebImageAndBuildMarkdown(uri, url, content);
+            if (imageMarkdown) {
+                handler.emit('insertImageMarkdown', imageMarkdown);
+            } else {
+                // 下载失败时回退为原样插入 URL，避免粘贴内容凭空丢失
+                handler.emit('insertImageMarkdown', url);
             }
         }).on("insertImage", async () => {
             const files = await vscode.window.showOpenDialog({
@@ -288,11 +331,28 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             if (!files || files.length === 0) return;
             const sourceUri = files[0];
             const ext = parse(sourceUri.fsPath).ext.replace('.', '').toLowerCase() || 'png';
+            if (!getImageRuleConfig().applyToLocal) {
+                // 不对本地图片应用规则：不复制，直接引用原位置
+                const ref = buildImageReferencePath(uri, sourceUri.fsPath);
+                handler.emit('insertImageMarkdown', `![${parse(sourceUri.fsPath).name}](${ref})`);
+                return;
+            }
             const fileBytes = await vscode.workspace.fs.readFile(sourceUri);
-            const imageMarkdown = await this.saveImageAndBuildMarkdown(uri, fileBytes, ext);
+            const imageMarkdown = await this.saveImageAndBuildMarkdown(uri, fileBytes, ext, {
+                sourceName: parse(sourceUri.fsPath).base,
+                documentContent: content,
+            });
             if (imageMarkdown) {
                 handler.emit('insertImageMarkdown', imageMarkdown);
             }
+        }).on("imageSettings", async (patch: Record<string, unknown>) => {
+            if (!patch || typeof patch !== 'object') return;
+            for (const key of IMAGE_CONFIG_KEYS) {
+                if (patch[key] !== undefined) {
+                    await Global.updateConfig(`image.${key}`, patch[key]);
+                }
+            }
+            handler.emit('markdownConfig', { imageRules: MarkdownEditorProvider.buildImageRules() });
         }).on("editInVSCode", (full: boolean) => {
             const side = full ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
             vscode.commands.executeCommand('vscode.openWith', uri, "default", side);
@@ -479,14 +539,25 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
         }
     }
 
+    private static buildImageRules() {
+        const cfg = getImageRuleConfig();
+        return { applyToLocal: cfg.applyToLocal, applyToWeb: cfg.applyToWeb, insertAction: cfg.insertAction };
+    }
+
     private getMarkdownWebviewConfig(configuration: vscode.WorkspaceConfiguration) {
         const markdownConfiguration = vscode.workspace.getConfiguration("markdown");
+        const imageConfig = getImageRuleConfig();
         return {
             editMode: configuration.get<string>("editMode", "wysiwyg"),
             editorTheme: configuration.get<string>("editorTheme", "Auto"),
             codeMirrorTheme: configuration.get<string>("codeMirrorTheme", "Auto"),
             mermaidTheme: configuration.get<string>("mermaidTheme", "Auto"),
             preventMacOptionKey: configuration.get<boolean>("preventMacOptionKey", true),
+            imageRules: {
+                applyToLocal: imageConfig.applyToLocal,
+                applyToWeb: imageConfig.applyToWeb,
+            },
+            imageSettings: imageConfig,
             markdown: {
                 math: {
                     macros: markdownConfiguration.get<Record<string, string>>("math.macros", {}),
@@ -502,18 +573,155 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
         documentUri: vscode.Uri,
         imageData: string | Uint8Array,
         ext: string,
+        options?: { sourceName?: string; documentContent?: string },
     ): Promise<string | undefined> {
+        const bytes = typeof imageData === 'string'
+            ? Uint8Array.from(Buffer.from(imageData, 'binary'))
+            : imageData;
+        const plan = resolveImageInsertPlan({
+            documentUri,
+            documentContent: options?.documentContent,
+            sourceName: options?.sourceName,
+            ext,
+        });
+
+        if (plan.kind === 'none') {
+            return undefined;
+        }
+        if (plan.kind === 'legacy') {
+            return this.saveImageLegacy(documentUri, bytes, ext);
+        }
+        if (plan.kind === 'upload') {
+            const uploaded = await this.uploadImageToServer(plan.server, bytes, plan.fileName);
+            if (uploaded) {
+                const name = parse(plan.fileName).name;
+                return `![${name}](${escapeReferenceUrl(uploaded)})`;
+            }
+            vscode.window.showWarningMessage(i18n('ext.markdown.imageUploadFailed'));
+            // 上传失败回退到按文档命名目录落盘，保证图片不丢
+            const fallbackDir = join(dirname(documentUri.fsPath), `${parse(documentUri.fsPath).name}.assets`);
+            return this.saveImageCopy(documentUri, bytes, ext, fallbackDir, buildImageFileName(options?.sourceName, ext));
+        }
+        return this.saveImageCopy(documentUri, bytes, ext, plan.targetDir, plan.fileName);
+    }
+
+    private async saveImageCopy(
+        documentUri: vscode.Uri,
+        bytes: Uint8Array,
+        ext: string,
+        targetDir: string,
+        fileName: string,
+    ): Promise<string> {
+        const imagePath = join(targetDir, fileName).replace(/\\/g, '/');
+        const imageUri = vscode.Uri.file(imagePath);
+        await ensureParentDirectory(imageUri);
+        await vscode.workspace.fs.writeFile(imageUri, bytes);
+        const ref = await MarkdownService.imgExtGuide(imagePath, buildImageReferencePath(documentUri, imagePath));
+        return buildImageMarkdown(imagePath, ref);
+    }
+
+    private async saveImageLegacy(
+        documentUri: vscode.Uri,
+        bytes: Uint8Array,
+        ext: string,
+    ): Promise<string> {
         const { relPath, fullPath } = adjustImgPath(documentUri, ext);
         const imagePath = isAbsolute(fullPath) ? fullPath : `${resolve(documentUri.fsPath, "..")}/${relPath}`.replace(/\\/g, "/");
         const imageUri = vscode.Uri.file(imagePath);
         await ensureParentDirectory(imageUri);
-        const bytes = typeof imageData === 'string'
-            ? Uint8Array.from(Buffer.from(imageData, 'binary'))
-            : imageData;
         await vscode.workspace.fs.writeFile(imageUri, bytes);
         const fileName = parse(relPath).name;
         const adjustRelPath = await MarkdownService.imgExtGuide(imagePath, relPath);
         return `![${fileName}](${adjustRelPath})`;
+    }
+
+    /** 网络图片按规则落盘；下载失败返回 undefined（调用方回退为原样插入 URL） */
+    private async saveWebImageAndBuildMarkdown(
+        documentUri: vscode.Uri,
+        url: string,
+        documentContent: string,
+    ): Promise<string | undefined> {
+        if (!getImageRuleConfig().applyToWeb) {
+            return undefined;
+        }
+        const fetched = await this.downloadWebImage(url);
+        if (!fetched) {
+            return undefined;
+        }
+        return this.saveImageAndBuildMarkdown(documentUri, fetched.bytes, fetched.ext, {
+            sourceName: fetched.name,
+            documentContent,
+        });
+    }
+
+    private async downloadWebImage(url: string): Promise<{ bytes: Uint8Array; ext: string; name?: string } | undefined> {
+        if (typeof fetch !== 'function') {
+            return undefined;
+        }
+        try {
+            const response = await fetch(url, {
+                signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(20000) : undefined,
+            });
+            if (!response.ok) {
+                return undefined;
+            }
+            const contentType = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+            const buffer = Buffer.from(await response.arrayBuffer());
+            if (contentType && !contentType.startsWith('image/')) {
+                return undefined;
+            }
+            if (buffer.length === 0 || buffer.length > 20 * 1024 * 1024) {
+                return undefined;
+            }
+            const typeExt: Record<string, string> = {
+                'image/jpeg': 'jpg',
+                'image/png': 'png',
+                'image/gif': 'gif',
+                'image/webp': 'webp',
+                'image/svg+xml': 'svg',
+                'image/bmp': 'bmp',
+                'image/x-icon': 'ico',
+            };
+            const ext = typeExt[contentType] || 'png';
+            let name: string | undefined;
+            try {
+                name = decodeURIComponent(new URL(url).pathname.split('/').pop() || '') || undefined;
+            } catch {
+                name = undefined;
+            }
+            return { bytes: new Uint8Array(buffer), ext, name };
+        } catch {
+            return undefined;
+        }
+    }
+
+    private async uploadImageToServer(server: string, bytes: Uint8Array, fileName: string): Promise<string | undefined> {
+        if (this.options.isWeb || typeof fetch !== 'function') {
+            return undefined;
+        }
+        const tmpPath = join(tmpdir(), fileName).replace(/\\/g, '/');
+        try {
+            writeFileSync(tmpPath, bytes);
+            const response = await fetch(server, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ list: [tmpPath] }),
+                signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined,
+            });
+            const result = await response.json() as { success?: boolean; result?: string[] };
+            if (result?.success && Array.isArray(result.result) && result.result[0]) {
+                return result.result[0];
+            }
+            return undefined;
+        } catch {
+            return undefined;
+        } finally {
+            try {
+                rmSync(tmpPath, { force: true });
+            } catch {
+                // ignore
+            }
+        }
     }
 
     private updateCount(content: string) {

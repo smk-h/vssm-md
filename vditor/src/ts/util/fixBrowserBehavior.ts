@@ -1688,6 +1688,15 @@ const preparePastePlainText = (vditor: IVditor, text: string): string => {
     return linkifyPastePlainText(text);
 };
 
+/** 判断纯文本是否为单一图片 URL（Typora「对网络位置的图片应用规则」的匹配口径） */
+export const extractImageUrlFromPlain = (textPlain: string): string | undefined => {
+    const plain = textPlain.trim();
+    if (!/^https?:\/\/\S+$/i.test(plain)) {
+        return undefined;
+    }
+    return /\.(png|jpe?g|gif|webp|svg|bmp|ico)(\?\S*)?(#\S*)?$/i.test(plain) ? plain : undefined;
+};
+
 export const paste = async (vditor: IVditor, event: (ClipboardEvent | DragEvent) & { target: HTMLElement }, callback: {
     pasteCode(code: string): void,
 }) => {
@@ -1826,6 +1835,12 @@ export const paste = async (vditor: IVditor, event: (ClipboardEvent | DragEvent)
         pastedFromMarkdown = true;
         callback.pasteCode(code);
     } else {
+        // 纯文本本身是图片 URL 时，交给宿主按图像规则处理（需在 linkify 改写前判断）
+        const plainImageUrl = extractImageUrlFromPlain(textPlain);
+        if (plainImageUrl && vditor.options.onPasteWebImage) {
+            vditor.options.onPasteWebImage(plainImageUrl);
+            return;
+        }
         let preparedPlain = textPlain;
         if (textPlain.trim() !== "") {
             preparedPlain = preparePastePlainText(vditor, textPlain);
@@ -1843,6 +1858,15 @@ export const paste = async (vditor: IVditor, event: (ClipboardEvent | DragEvent)
             tempElement.querySelectorAll(".vditor-copy").forEach((e) => {
                 e.remove();
             });
+            // 整段内容只有一张网络图片时（如从浏览器复制图片），交给宿主按图像规则落盘
+            const htmlImages = tempElement.querySelectorAll("img");
+            const singleWebImage = htmlImages.length === 1
+                && tempElement.textContent!.trim() === ""
+                && /^https?:\/\//i.test(htmlImages[0].getAttribute("src") || "");
+            if (singleWebImage && vditor.options.onPasteWebImage) {
+                vditor.options.onPasteWebImage(htmlImages[0].getAttribute("src")!);
+                return;
+            }
             if (vditor.currentMode === "ir") {
                 renderers.HTML2VditorIRDOM = { renderLinkDest };
                 vditor.lute.SetJSRenderers({ renderers });

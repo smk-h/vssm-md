@@ -349,6 +349,28 @@ interface IUpload {
     linkToImgCallback?(responseText: string): void;
 }
 
+/** 图像插入设置（与宿主侧配置同步，Typora 风格规则） */
+interface IImageSettings {
+    /** 插入图片时的落盘模式 */
+    insertAction?: "legacy" | "none" | "currentFolder" | "assetsFolder" | "perFileAssets" | "custom" | "upload";
+    /** custom 模式的目标目录模板，支持 ${filename} */
+    customPath?: string;
+    /** 对本地图片应用上述规则 */
+    applyToLocal?: boolean;
+    /** 对网络图片应用上述规则 */
+    applyToWeb?: boolean;
+    /** 允许 YAML `typora-copy-images-to: upload` 触发上传 */
+    allowYamlUpload?: boolean;
+    /** 优先使用相对路径 */
+    preferRelativePath?: boolean;
+    /** 为相对路径添加 ./ 前缀 */
+    prefixDotSlash?: boolean;
+    /** 插入时自动转义图片 URL */
+    escapeUrl?: boolean;
+    /** PicGo 兼容上传接口地址 */
+    uploadServer?: string;
+}
+
 /** @link https://ld246.com/article/1549638745630#options-toolbar */
 interface IMenuItem {
     /** 唯一标示 */
@@ -576,6 +598,17 @@ interface IOptions {
     icon?: "ant" | "material";
     /** @link https://ld246.com/article/1549638745630#options-upload */
     upload?: IUpload;
+    /** 图像插入规则（宿主配置快照），粘贴时据此决定是否拦截图片 URL */
+    imageRules?: {
+        applyToLocal?: boolean;
+        applyToWeb?: boolean;
+    };
+    /** 图像设置初始值，设置面板读取展示 */
+    imageSettings?: IImageSettings;
+    /** 图像设置面板变更回调 */
+    changeImageSettings?(patch: Partial<IImageSettings>): void;
+    /** 粘贴网络图片 URL 时触发（core 检测到单一图片链接后调用），由宿主决定下载落盘或保持原样 */
+    onPasteWebImage?(url: string): void;
     /** 配置自建 CDN 地址。默认值: 'https://unpkg.com/vditor@${VDITOR_VERSION}' */
     cdn?: string;
     /** tab 键操作字符串，支持 \t 及任意字符串 */
