@@ -2,7 +2,7 @@
 	"name": "vssm-md",
 	"displayName": "vssm-md",
 	"description": "苏木的vscode扩展Markdown所见即所得编辑器",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"publisher": "ms-vs-extensions",
 	"icon": "image/logo.png",
 	"engines": {
