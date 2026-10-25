@@ -438,3 +438,82 @@
   from { opacity: 0; transform: translateY(-6px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0)   scale(1);    }
 }
+
+// 字数统计（Typora 风格），追加在工具栏末尾并推到最右侧；点击弹出全量指标面板
+.vditor-counter {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: var(--toolbar-height);
+  margin-left: auto;
+  font-size: 12px;
+  white-space: nowrap;
+  user-select: none;
+  color: var(--toolbar-icon-color, var(--second-color, inherit));
+
+  &__value {
+    height: 100%;
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--vditor-popover-radius, 6px);
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--toolbar-icon-hover-color);
+      background-color: color-mix(in srgb, var(--toolbar-icon-color) 8%, transparent);
+    }
+  }
+}
+
+.vditor-counter-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 100;
+  min-width: 168px;
+  padding: 6px;
+  background: var(--panel-background-color);
+  border: 1px solid color-mix(in srgb, var(--toolbar-icon-color) 18%, transparent);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08);
+  animation: vditor-popup-in 0.15s ease;
+  cursor: default;
+
+  &__title {
+    margin-bottom: 4px;
+    padding: 6px 10px 8px;
+    border-bottom: 1px solid color-mix(in srgb, var(--toolbar-icon-color) 12%, transparent);
+    text-align: center;
+    font-weight: 600;
+    color: var(--textarea-text-color);
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+      background: color-mix(in srgb, var(--toolbar-icon-color) 10%, transparent);
+    }
+  }
+
+  &__value {
+    flex: 1;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--textarea-text-color);
+  }
+
+  &__label {
+    min-width: 36px;
+    text-align: left;
+    color: var(--toolbar-icon-color);
+  }
+}

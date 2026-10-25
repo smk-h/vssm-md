@@ -14,7 +14,6 @@ export class Options {
         cdn: Constants.CDN,
         counter: {
             enable: false,
-            type: "markdown",
         },
         debugger: false,
         wysiwygInputPerf: false,

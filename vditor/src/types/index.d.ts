@@ -515,16 +515,24 @@ interface IOptions {
     i18n?: ITips;
     /** @link https://ld246.com/article/1549638745630#options-toolbar */
     toolbar?: Array<string | IMenuItem>;
-    /** @link https://ld246.com/article/1549638745630#options-counter */
+    /** 字数统计（Typora 风格：词 = CJK 字符数 + 西文单词数），显示在工具栏最右侧，点击循环切换指标 */
     counter?: {
         enable: boolean;
-        max?: number;
-        type?: "markdown" | "text";
-        after?(length: number, counter: {
-            enable: boolean;
-            max?: number;
-            type?: "markdown" | "text"
-        }): void
+        /** 各指标显示标签，缺省英文 Words/Characters/Lines/Minutes */
+        labels?: {
+            /** 统计面板标题，缺省 Word Count */
+            title?: string;
+            words: string;
+            chars: string;
+            lines: string;
+            minutes: string;
+            wordsSingular?: string;
+            charsSingular?: string;
+            linesSingular?: string;
+            minutesSingular?: string;
+        };
+        /** 阅读速度（词/分钟），分钟数 = round(词数 / wordsPerMinute)，默认 382（Typora 较快档） */
+        wordsPerMinute?: number;
     };
     /** @link https://ld246.com/article/1549638745630#options-cache */
     cache?: {

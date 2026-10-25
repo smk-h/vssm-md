@@ -54,7 +54,6 @@ window.vditor = new Vditor('vditor', {
   },
   counter: {
     enable: true,
-    type: 'text',
   },
   hint: {
     parse: false,

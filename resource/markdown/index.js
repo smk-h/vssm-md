@@ -15,6 +15,7 @@ handler.on("open", async (md) => {
   }
   let editor;
   const getMarkdownValue = createMarkdownValueReader(() => editor, workspaceBaseUrl);
+  const vditorLang = mapVscodeLanguageToVditorLang(language);
   editor = new Vditor('vditor', {
     value: content,
     cdn: rootPath,
@@ -28,11 +29,18 @@ handler.on("open", async (md) => {
       id: documentCacheId,
       focusHost: 'vscode',
     },
+    counter: {
+      enable: true,
+      wordsPerMinute: 382,
+      labels: vditorLang.startsWith('zh')
+        ? { title: '字数统计', words: '词', chars: '字符', lines: '行', minutes: '分钟' }
+        : undefined,
+    },
     mode: editMode,
     editorTheme,
     codeMirrorTheme,
     mermaidTheme,
-    lang: mapVscodeLanguageToVditorLang(language),
+    lang: vditorLang,
     tab: '\t',
     toolbar: await getToolbar(rootPath, () => {
       handler.emit('doSave', getMarkdownValue());
