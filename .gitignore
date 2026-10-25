@@ -12,3 +12,4 @@ pnpm-workspace.yaml
 test/output
 .tmp/*
 !.tmp/README.md
+.playwright-*
