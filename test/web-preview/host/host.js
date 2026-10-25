@@ -4,17 +4,32 @@
 var STORAGE_KEY = 'vssm-web-preview:content';
 var THEME_KEY = 'vssm-web-preview:theme';
 var CURRENT_KEY = 'vssm-web-preview:current';
+var IMAGE_SETTINGS_KEY = 'vssm-web-preview:imageSettings';
 var frame = document.getElementById('frame');
 var logEl = document.getElementById('log');
 var curEl = document.getElementById('cur');
 var treeEl = document.getElementById('tree');
 var fileInput = document.getElementById('file');
 var theme = localStorage.getItem(THEME_KEY) || 'dark';
-var curPath = null;   // 当前打开的 test/markdown 相对路径；null = 示例文档
+var curPath = null;   // 当前打开的 .tmp 相对路径；null = 示例文档
 
 var log = function (text) { logEl.textContent = text; };
 var currentContent = function () { return localStorage.getItem(STORAGE_KEY) || ''; };
 var loadFrame = function () { frame.src = '/markdown/index.html?theme=' + encodeURIComponent(theme) + '&t=' + Date.now(); };
+
+/* ---------- 图像设置（镜像 src/service/imageInsertRule.ts 的宿主侧状态） ---------- */
+var imageSettings = function () {
+  try {
+    return Object.assign({}, WebImageRules.DEFAULTS, JSON.parse(localStorage.getItem(IMAGE_SETTINGS_KEY) || '{}'));
+  } catch (e) {
+    return Object.assign({}, WebImageRules.DEFAULTS);
+  }
+};
+var applyImageSettingsPatch = function (patch) {
+  var next = Object.assign(imageSettings(), patch || {});
+  localStorage.setItem(IMAGE_SETTINGS_KEY, JSON.stringify(next));
+  return next;
+};
 
 document.getElementById('theme').onclick = function () {
   theme = theme === 'dark' ? 'light' : 'dark';
@@ -142,6 +157,136 @@ document.getElementById('newfile').onclick = function () {
 };
 
 /* ---------- 编辑器桥接 ---------- */
+var send = function (type, content) { frame.contentWindow.postMessage({ type: type, content: content }, '*'); };
+
+/* ---------- 粘贴探针（?debugPaste=1 启用）：在 iframe 内捕获 keydown/paste，结果显示在顶栏 ---------- */
+if (/[?&]debugPaste=1/.test(location.search)) {
+  var installPasteProbe = function () {
+    var win = frame.contentWindow;
+    var doc = frame.contentDocument;
+    if (!win || !doc || !doc.body || win.__pasteProbeInstalled) return;
+    win.__pasteProbeInstalled = true;
+    doc.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+        log('探针: keydown ctrl+v（按键到达页面）');
+      }
+    }, true);
+    doc.addEventListener('paste', function (e) {
+      var cd = e.clipboardData;
+      log('探针: paste types=' + (cd ? JSON.stringify([].slice.call(cd.types)) : 'null') +
+        ' files=' + (cd ? cd.files.length : '?') +
+        (cd && cd.files[0] ? ' name=' + cd.files[0].name : '') +
+        ' plain=' + (cd ? JSON.stringify((cd.getData('text/plain') || '').slice(0, 30)) : '?'));
+    }, true);
+    log('粘贴探针已启用，请在编辑器内按 Ctrl+V');
+  };
+  // iframe 每次导航都会换新文档，轮询幂等重装（同文档靠标记去重）
+  setInterval(installPasteProbe, 800);
+  installPasteProbe();
+}
+
+var binaryToBase64 = function (binary) {
+  // readAsBinaryString 产生的是 Latin1 字符串，可直接交给 btoa
+  return btoa(binary);
+};
+
+// 按当前图像设置把图片(base64)落盘并回发插入引用；mirrors saveImageAndBuildMarkdown
+var saveImageAndInsert = function (payload) {
+  var docPath = curPath || 'preview.md';
+  var settings = imageSettings();
+  var plan = WebImageRules.resolvePlan({
+    docPath: docPath,
+    content: currentContent(),
+    sourceName: payload.name,
+    ext: payload.ext,
+    settings: settings,
+  });
+  if (plan.kind === 'none') {
+    log('图像规则为「无特殊操作」，跳过落盘');
+    return;
+  }
+  var imagePath = (plan.targetDir ? plan.targetDir.replace(/\/+$/, '') + '/' : '') + plan.fileName;
+  var ref = WebImageRules.buildReference(docPath, imagePath, settings, plan);
+  var name = plan.fileName.replace(/\.[A-Za-z0-9]+$/, '');
+  fetch('/api/file?p=' + encodeURIComponent(imagePath) + '&enc=base64', { method: 'POST', body: payload.base64 })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data.ok) { log(data.error || '图片写入失败'); return; }
+      send('insertImageMarkdown', '![' + name + '](' + ref + ')');
+      log('图片已落盘: ' + imagePath + ' → 引用 ' + ref);
+      loadTree();
+    });
+};
+
+var handleImagePaste = function (payload) {
+  if (!payload || !payload.data) return;
+  saveImageAndInsert({ base64: binaryToBase64(payload.data), ext: payload.ext, name: payload.name });
+};
+
+// 删除图片引用对应的落盘文件（镜像 VS Code 侧 deleteLocalImageFile 的行为）：
+// 仅本地路径；删除后向上清理空目录（DELETE 空目录会成功，非空目录服务端会拒绝）
+var deleteImageFile = function (src) {
+  if (!src || /^[a-z][a-z0-9+.-]*:/i.test(src) || src.indexOf('//') === 0 || src.charAt(0) === '#') return;
+  var docPath = curPath || 'preview.md';
+  var dir = docPath.indexOf('/') >= 0 ? docPath.slice(0, docPath.lastIndexOf('/')) : '';
+  var buildTarget = function (raw) {
+    var rel = String(raw).replace(/\\/g, '/').replace(/^\.\//, '');
+    return rel.charAt(0) === '/' ? rel.slice(1) : (dir ? dir + '/' + rel : rel);
+  };
+  var tryTargets = [buildTarget(src)];
+  try { var decoded = decodeURIComponent(src); if (decoded !== src) tryTargets.push(buildTarget(decoded)); } catch (e) { /* ignore */ }
+
+  var cleanupDirs = function (target) {
+    var parts = target.split('/');
+    parts.pop();
+    var tryRemove = function () {
+      if (parts.length === 0) return;
+      var dirPath = parts.join('/');
+      if (!dirPath) return;
+      fetch('/api/file?p=' + encodeURIComponent(dirPath), { method: 'DELETE' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.ok) { parts.pop(); tryRemove(); }
+        });
+    };
+    tryRemove();
+  };
+  var attempt = function (index) {
+    if (index >= tryTargets.length) return;
+    var target = tryTargets[index];
+    fetch('/api/file?p=' + encodeURIComponent(target), { method: 'DELETE' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok) {
+          log('图片已删除: ' + target);
+          loadTree();
+          cleanupDirs(target);
+        } else {
+          attempt(index + 1);
+        }
+      });
+  };
+  attempt(0);
+};
+
+var handleImageUrl = function (url) {
+  log('网络图片待落盘: ' + url);
+  fetch('/api/download?url=' + encodeURIComponent(url))
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.error || !data.base64) {
+        log(data.error || '下载失败，回退为原样插入 URL');
+        send('insertImageMarkdown', url);
+        return;
+      }
+      saveImageAndInsert({ base64: data.base64, ext: data.ext, name: data.name });
+    })
+    .catch(function (error) {
+      log('下载失败: ' + error.message);
+      send('insertImageMarkdown', url);
+    });
+};
+
 var pickImage = function () {
   var input = document.createElement('input');
   input.type = 'file';
@@ -149,17 +294,26 @@ var pickImage = function () {
   input.onchange = function () {
     var file = input.files && input.files[0];
     if (!file) return;
+    if (imageSettings().applyToLocal === false) {
+      // 不对本地图片应用规则：内联 data URI，不落盘
+      var inlineReader = new FileReader();
+      inlineReader.onload = function () {
+        send('insertImageMarkdown', '![' + file.name + '](' + inlineReader.result + ')');
+        log('已内联图片(不落盘): ' + file.name);
+      };
+      inlineReader.readAsDataURL(file);
+      return;
+    }
     var reader = new FileReader();
     reader.onload = function () {
-      send('insertImageMarkdown', '![' + file.name + '](' + reader.result + ')');
-      log('已插入图片: ' + file.name);
+      var ext = (file.name.split('.').pop() || 'png').toLowerCase();
+      saveImageAndInsert({ base64: binaryToBase64(reader.result), ext: ext, name: file.name });
     };
-    reader.readAsDataURL(file);
+    reader.readAsBinaryString(file);
   };
   input.click();
 };
 
-var send = function (type, content) { frame.contentWindow.postMessage({ type: type, content: content }, '*'); };
 var saveTimer = null;
 var onContentSave = function (content) {
   localStorage.setItem(STORAGE_KEY, content);
@@ -186,6 +340,11 @@ window.addEventListener('message', function (event) {
           codeMirrorTheme: 'Auto',
           mermaidTheme: 'Auto',
           preventMacOptionKey: true,
+          imageRules: {
+            applyToLocal: imageSettings().applyToLocal !== false,
+            applyToWeb: imageSettings().applyToWeb !== false,
+          },
+          imageSettings: imageSettings(),
           markdown: { math: { macros: {} } },
           language: navigator.language || 'zh-CN',
           isWeb: false,
@@ -210,6 +369,19 @@ window.addEventListener('message', function (event) {
       break;
     case 'insertImage':
       pickImage();
+      break;
+    case 'img':
+      handleImagePaste(data.content);
+      break;
+    case 'imgUrl':
+      handleImageUrl(data.content);
+      break;
+    case 'imageSettings':
+      applyImageSettingsPatch(data.content);
+      log('图像设置已更新: ' + JSON.stringify(data.content));
+      break;
+    case 'deleteImageFile':
+      deleteImageFile(data.content);
       break;
     case 'telemetry':
     case 'scroll':
