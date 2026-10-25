@@ -146,6 +146,7 @@ window.VditorI18n = {
   'imagePreferRelative': '가능하면 상대 경로 사용',
   'imageDotSlash': '상대 경로에 ./ 추가',
   'imageEscapeUrl': '삽입 시 이미지 URL 자동 이스케이프',
+  'settings': '설정',
   'imageActionLegacy': '클래식(pasterImgPath)',
   'imageActionNone': '특별한 동작 없음',
   'imageActionCurrentFolder': '현재 폴더로 복사(./)',

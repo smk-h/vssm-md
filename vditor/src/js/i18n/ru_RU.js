@@ -146,6 +146,7 @@ window.VditorI18n = {
   'imagePreferRelative': 'По возможности использовать относительный путь',
   'imageDotSlash': 'Добавлять ./ к относительным путям',
   'imageEscapeUrl': 'Автоэкранирование URL изображения',
+  'settings': 'Настройки',
   'imageActionLegacy': 'Классический (pasterImgPath)',
   'imageActionNone': 'Без специальных действий',
   'imageActionCurrentFolder': 'Копировать в текущую папку (./)',

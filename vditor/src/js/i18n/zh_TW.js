@@ -148,6 +148,7 @@ window.VditorI18n = {
   'imagePreferRelative': '優先使用相對路徑',
   'imageDotSlash': '為相對路徑加上 ./',
   'imageEscapeUrl': '插入時自動跳脫圖片 URL',
+  'settings': '設定',
   'imageActionLegacy': '經典（pasterImgPath）',
   'imageActionNone': '無特殊操作',
   'imageActionCurrentFolder': '複製圖片到目前資料夾 (./)',

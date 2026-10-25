@@ -306,7 +306,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 10px;
+    padding: 3px 9px;
     border-radius: var(--settings-radius-control);
     border: 0.5px solid color-mix(in srgb, var(--toolbar-icon-color) 12%, transparent);
     background: var(--settings-fill-elevated);
@@ -379,10 +379,10 @@
   &__toggle {
     position: relative;
     display: block;
-    width: 40px;
-    height: 24px;
+    width: 32px;
+    height: 18px;
     padding: 0;
-    border-radius: 12px;
+    border-radius: 9px;
     border: none;
     background: color-mix(in srgb, var(--toolbar-icon-color) 20%, transparent);
     cursor: pointer;
@@ -396,8 +396,8 @@
       position: absolute;
       top: 2px;
       left: 2px;
-      width: 20px;
-      height: 20px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background: #fff;
       transition: transform 0.28s var(--settings-ease);
@@ -414,7 +414,7 @@
       background: var(--settings-accent);
 
       &::after {
-        transform: translateX(16px);
+        transform: translateX(14px);
       }
 
       &:hover {
@@ -498,7 +498,7 @@
   &__ai-prompt-textarea {
     width: 100%;
     box-sizing: border-box;
-    padding: 8px 10px;
+    padding: 5px 9px;
     font-size: 13px;
     border-radius: var(--settings-radius-control);
     background: var(--settings-fill-elevated);
@@ -507,11 +507,14 @@
     .vditor-popover-field();
   }
 
-  // 图像设置里 Label + 输入框同行，输入框占满剩余宽度
+  // 图像设置里 Label + 输入框同行：留出与标签的间距，框体只比文字略高
   &__image-input {
     flex: 1;
     min-width: 0;
     width: auto;
+    margin-left: 10px;
+    padding: 2px 8px;
+    line-height: 1.5;
     text-align: right;
   }
 
@@ -615,76 +618,131 @@
     }
   }
 
-  &__footer {
-    padding: 14px 4px 2px;
-    margin-top: 4px;
+  // 面板标题栏：返回 + 标题 + 编辑/重置
+  &__header {
     display: flex;
-    justify-content: center;
-    gap: 10px;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 6px 10px;
+    border-bottom: 0.5px solid var(--settings-separator);
+    margin-bottom: 8px;
   }
 
-  &__footer-btn {
+  &__crumb {
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--settings-label-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.18s var(--settings-ease);
+
+    &:hover {
+      color: var(--settings-accent);
+    }
+  }
+
+  &__crumb-sep {
+    font-size: 12px;
+    color: var(--settings-label-secondary);
+    opacity: 0.7;
+  }
+
+  &__crumb-current {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--toolbar-icon-color);
+    white-space: nowrap;
+  }
+
+  &__header-spacer {
+    flex: 1;
+  }
+
+  &__header-btn {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 13px;
-    font-weight: 500;
-    color: inherit;
-    background: var(--vditor-popover-secondary-btn-bg);
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
     border: none;
     border-radius: var(--settings-radius-button);
-    width: auto;
-    text-align: center;
-    padding: 7px 18px;
+    background: var(--vditor-popover-secondary-btn-bg);
+    color: var(--toolbar-icon-color);
     cursor: pointer;
     transition:
       color 0.18s var(--settings-ease),
       background 0.18s var(--settings-ease),
-      box-shadow 0.18s var(--settings-ease),
       transform 0.12s var(--settings-ease);
 
-    > span:not(.codicon) {
-      color: var(--toolbar-icon-color);
+    .codicon {
+      font-size: 14px;
     }
 
-    .codicon {
-      font-size: 13px;
-      transition: color 0.18s var(--settings-ease);
+    &[data-edit-settings] .codicon {
+      color: var(--settings-accent);
+    }
+
+    &[data-reset-settings] .codicon {
+      color: var(--error-color, #ff3b30);
+    }
+
+    &:hover {
+      background: var(--vditor-popover-secondary-btn-bg-hover);
     }
 
     &:active {
-      transform: scale(0.97);
+      transform: scale(0.95);
+    }
+  }
+
+  // 一级菜单：分类列表
+  &__menu {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 2px;
+  }
+
+  &__nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: var(--settings-row-min-height);
+    padding: 0 10px;
+    box-sizing: border-box;
+    border: none;
+    border-radius: var(--settings-radius-control);
+    background: transparent;
+    color: var(--toolbar-icon-color);
+    font-size: 13px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.18s var(--settings-ease);
+
+    &:hover {
+      // 半透明浮层：以图标色 8% 叠加，深浅色主题下都有可感知的反馈
+      background: color-mix(in srgb, var(--toolbar-icon-color) 8%, transparent);
     }
 
-    &--edit {
-      .codicon {
-        color: var(--settings-accent);
-      }
-
-      &:hover {
-        background: var(--vditor-popover-secondary-btn-bg-hover);
-      }
+    &:hover .vditor-settings-panel__nav-chevron {
+      opacity: 1;
     }
+  }
 
-    &--reset {
-      background: var(--error-color, #ff3b30);
+  &__nav-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-      > span:not(.codicon) {
-        color: #fff;
-      }
-
-      .codicon {
-        color: #fff;
-      }
-
-      &:hover {
-        background: color-mix(in srgb, var(--error-color, #ff3b30) 88%, #000);
-      }
-
-      &:focus-visible {
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--error-color, #ff3b30) 30%, transparent);
-      }
-    }
+  &__nav-chevron {
+    font-size: 13px;
+    opacity: 0.6;
   }
 }
 

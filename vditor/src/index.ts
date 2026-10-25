@@ -66,7 +66,7 @@ import {
 } from "./ts/util/globalLocalStorageSettings";
 import { exportExportSettings, ExportThemeSettings } from "./ts/util/exportThemeSettings";
 import {
-    buildSettingsPanelHTML,
+    renderSettingsView,
     refreshAISettingsToolbarPanel,
     refreshSettingsToolbarPanel,
 } from "./ts/ui/settingsPanel";
@@ -457,7 +457,7 @@ class Vditor {
         const settingsItem = this.vditor.toolbar.elements.settings;
         const panelElement = settingsItem?.querySelector(".vditor-hint") as HTMLElement | null;
         if (panelElement) {
-            panelElement.innerHTML = buildSettingsPanelHTML(this.vditor);
+            renderSettingsView(panelElement, this.vditor);
         }
         refreshSettingsToolbarPanel(this.vditor);
         refreshAISettingsToolbarPanel(this.vditor);

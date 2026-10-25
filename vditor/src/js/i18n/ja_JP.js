@@ -146,6 +146,7 @@ window.VditorI18n = {
   'imagePreferRelative': '可能な場合は相対パスを使用',
   'imageDotSlash': '相対パスに ./ を付ける',
   'imageEscapeUrl': '挿入時に画像 URL を自動エスケープ',
+  'settings': '設定',
   'imageActionLegacy': '従来（pasterImgPath）',
   'imageActionNone': '特に何もしない',
   'imageActionCurrentFolder': '現在のフォルダーへコピー (./)',

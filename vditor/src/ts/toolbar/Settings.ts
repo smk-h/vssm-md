@@ -1,5 +1,5 @@
 import {
-    buildSettingsPanelHTML,
+    renderSettingsView,
     refreshSettingsPanel,
     SETTINGS_PANEL_CLASS,
     IMAGE_INSERT_ACTION_KEY,
@@ -73,7 +73,7 @@ const applyImageSettings = (vditor: IVditor, panelElement: HTMLElement, patch: P
     if (typeof vditor.options.changeImageSettings === "function") {
         vditor.options.changeImageSettings(patch);
     }
-    panelElement.innerHTML = buildSettingsPanelHTML(vditor);
+    renderSettingsView(panelElement, vditor);
 };
 
 const resolveDropdownOptions = (key: string) => {
@@ -128,7 +128,8 @@ export class Settings extends MenuItem {
         const actionBtn = this.element.children[0] as HTMLElement;
         const panelElement = document.createElement("div");
         panelElement.className = `vditor-hint${menuItem.level === 2 ? "" : " vditor-panel--arrow"}`;
-        panelElement.innerHTML = buildSettingsPanelHTML(vditor);
+        panelElement.dataset.section = "menu";
+        renderSettingsView(panelElement, vditor);
         this.element.appendChild(panelElement);
 
         // Floating dropdown (singleton, appended to body)
@@ -220,10 +221,29 @@ export class Settings extends MenuItem {
 
         actionBtn.addEventListener(getEventName(), () => {
             closeFloatingMenu();
+            panelElement.dataset.section = "menu";
             refreshSettingsPanel(panelElement, vditor);
         }, true);
 
         panelElement.addEventListener(getEventName(), (event: MouseEvent & { target: HTMLElement }) => {
+            // 二级导航：进入分类
+            const navRow = event.target.closest("[data-settings-section]") as HTMLElement | null;
+            if (navRow) {
+                panelElement.dataset.section = navRow.getAttribute("data-settings-section") || "menu";
+                renderSettingsView(panelElement, vditor);
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+            // 二级导航：返回菜单
+            if (event.target.closest("[data-settings-back]")) {
+                panelElement.dataset.section = "menu";
+                renderSettingsView(panelElement, vditor);
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+
             // Edit mode
             const modeButton = event.target.closest("button[data-mode]") as HTMLElement | null;
             if (modeButton) {
@@ -352,7 +372,7 @@ export class Settings extends MenuItem {
                     vditor.element.style.removeProperty(prop);
                 }
                 applyEditorSettings(vditor.element);
-                panelElement.innerHTML = buildSettingsPanelHTML(vditor);
+                renderSettingsView(panelElement, vditor);
                 event.preventDefault();
                 event.stopPropagation();
                 return;

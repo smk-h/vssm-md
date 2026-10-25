@@ -196,5 +196,6 @@ window.VditorI18n = {
   'boldColorPurple': 'Purple',
   'boldColorTeal': 'Teal',
   'settingsReset': 'Reset',
+  'settings': 'Settings',
   'settingsEditFile': 'Edit Config',
 }

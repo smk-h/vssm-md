@@ -196,5 +196,6 @@ window.VditorI18n = {
   'boldColorPurple': '紫色',
   'boldColorTeal': '青色',
   'settingsReset': '重置',
+  'settings': '设置',
   'settingsEditFile': '编辑配置',
 }

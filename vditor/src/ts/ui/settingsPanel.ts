@@ -125,12 +125,11 @@ const buildImageTextInputHTML = (field: "customPath" | "uploadServer", label: st
         <input type="text" class="${SETTINGS_PANEL_CLASS}__ai-prompt-input ${SETTINGS_PANEL_CLASS}__image-input" data-image-input="${field}" value="${escapeAttr(value)}">
     </div>`;
 
-export const buildImageSettingsSectionHTML = (settings: IImageSettings = {}) => {
+/** 图像插入分类的控件组（标题由二级详情的标题栏承担） */
+export const buildImageSettingsGroupHTML = (settings: IImageSettings = {}) => {
     const i18n = window.VditorI18n;
     const action = settings.insertAction || "legacy";
-    let html = `<div class="${SETTINGS_PANEL_CLASS}__section">
-        <div class="${SETTINGS_PANEL_CLASS}__title">${i18n.image ?? "Image"}</div>
-        <div class="${SETTINGS_PANEL_CLASS}__group">
+    let html = `<div class="${SETTINGS_PANEL_CLASS}__group">
             ${buildDropdownHTML(IMAGE_INSERT_ACTION_KEY, i18n.imageWhenInsert ?? "When Insert", getImageInsertActionOptions(), action)}`;
     if (action === "custom") {
         html += buildImageTextInputHTML("customPath", i18n.imageSavePath ?? "Path", settings.customPath || "./${filename}/img");
@@ -143,7 +142,7 @@ export const buildImageSettingsSectionHTML = (settings: IImageSettings = {}) => 
         + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}preferRelativePath`, i18n.imagePreferRelative ?? "Use relative path if possible", settings.preferRelativePath !== false)
         + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}prefixDotSlash`, i18n.imageDotSlash ?? "Add ./ to relative paths", settings.prefixDotSlash !== false)
         + buildToggleHTML(`${IMAGE_SETTINGS_KEY_PREFIX}escapeUrl`, i18n.imageEscapeUrl ?? "Auto escape image URL", settings.escapeUrl === true);
-    html += `</div></div>`;
+    html += `</div>`;
     return html;
 };
 
@@ -319,21 +318,61 @@ export const buildAIModelsHTML = () => {
     </div>`;
 };
 
-export const buildSettingsFooterHTML = () => {
-    const i18n = window.VditorI18n;
-    return `<div class="${SETTINGS_PANEL_CLASS}__footer">
-            <button type="button" class="${SETTINGS_PANEL_CLASS}__footer-btn ${SETTINGS_PANEL_CLASS}__footer-btn--edit" data-edit-settings title="${i18n.settingsEditFile ?? i18n.edit}">
-                <span class="codicon codicon-edit" aria-hidden="true"></span>
-                <span>${i18n.settingsEditFile ?? i18n.edit}</span>
-            </button>
-            <button type="button" class="${SETTINGS_PANEL_CLASS}__footer-btn ${SETTINGS_PANEL_CLASS}__footer-btn--reset" data-reset-settings title="${i18n.settingsReset ?? 'Reset'}">
-                <span class="codicon codicon-discard" aria-hidden="true"></span>
-                <span>${i18n.settingsReset ?? 'Reset'}</span>
-            </button>
-        </div>`;
+/** 设置面板分类：一级菜单项与二级详情共用 */
+export type SettingsSectionId = "mode" | "font" | "typography" | "codemirror" | "imageSize" | "image";
+
+const SETTINGS_SECTION_TITLES: Record<SettingsSectionId, string> = {
+    mode: "Edit Mode",
+    font: "Font Size",
+    typography: "Typography",
+    codemirror: "CodeMirror",
+    imageSize: "Image Size",
+    image: "Image",
 };
 
-export const buildSettingsPanelHTML = (vditor: IVditor) => {
+const settingsSectionTitle = (section: SettingsSectionId): string => {
+    const i18n = window.VditorI18n;
+    if (section === "imageSize") return i18n.imageSize ?? SETTINGS_SECTION_TITLES.imageSize;
+    if (section === "image") return i18n.image ?? SETTINGS_SECTION_TITLES.image;
+    return SETTINGS_SECTION_TITLES[section];
+};
+
+/** 面板标题栏：面包屑导航（二级为 设置›分类，点击设置回一级）+ 编辑配置/重置 */
+const buildSettingsHeaderHTML = (section: SettingsSectionId | null) => {
+    const i18n = window.VditorI18n;
+    const root = section
+        ? `<button type="button" class="${SETTINGS_PANEL_CLASS}__crumb" data-settings-back title="${i18n.back ?? "Back"}">${i18n.settings ?? "Settings"}</button>
+        <span class="${SETTINGS_PANEL_CLASS}__crumb-sep" aria-hidden="true">›</span>
+        <span class="${SETTINGS_PANEL_CLASS}__crumb-current">${settingsSectionTitle(section)}</span>`
+        : `<span class="${SETTINGS_PANEL_CLASS}__crumb-current">${i18n.settings ?? "Settings"}</span>`;
+    return `<div class="${SETTINGS_PANEL_CLASS}__header">
+        ${root}
+        <span class="${SETTINGS_PANEL_CLASS}__header-spacer"></span>
+        <button type="button" class="${SETTINGS_PANEL_CLASS}__header-btn" data-edit-settings title="${i18n.settingsEditFile ?? i18n.edit}">
+            <span class="codicon codicon-edit" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="${SETTINGS_PANEL_CLASS}__header-btn" data-reset-settings title="${i18n.settingsReset ?? "Reset"}">
+            <span class="codicon codicon-discard" aria-hidden="true"></span>
+        </button>
+    </div>`;
+};
+
+/** 一级菜单：分类列表 */
+export const buildSettingsMenuHTML = (vditor: IVditor) => {
+    const sections: SettingsSectionId[] = ["mode", "font", "typography", "codemirror", "imageSize", "image"];
+    return `<div class="${SETTINGS_PANEL_CLASS}__view">
+        ${buildSettingsHeaderHTML(null)}
+        <div class="${SETTINGS_PANEL_CLASS}__menu">
+            ${sections.map((section) => `<button type="button" class="${SETTINGS_PANEL_CLASS}__nav-row" data-settings-section="${section}">
+                <span class="${SETTINGS_PANEL_CLASS}__nav-label">${settingsSectionTitle(section)}</span>
+                <span class="codicon codicon-chevron-right ${SETTINGS_PANEL_CLASS}__nav-chevron" aria-hidden="true"></span>
+            </button>`).join("")}
+        </div>
+    </div>`;
+};
+
+/** 二级详情：单个分类的控件（复用既有 builder，事件委托不受影响） */
+export const buildSettingsSectionViewHTML = (section: SettingsSectionId, vditor: IVditor) => {
     const i18n = window.VditorI18n;
     const uiSize = resolveDisplayedFontSize(vditor, UI_FONT_SIZE_KEY, UI_FONT_SIZE_DEFAULT);
     const editorSize = resolveDisplayedFontSize(vditor, EDITOR_FONT_SIZE_KEY, EDITOR_FONT_SIZE_DEFAULT);
@@ -346,54 +385,58 @@ export const buildSettingsPanelHTML = (vditor: IVditor) => {
     const imgMaxHeight = getGlobalLocalStorageSetting<number>(IMAGE_MAX_HEIGHT_KEY, IMAGE_MAX_HEIGHT_DEFAULT);
     const codeBlockMaxHeight = getGlobalLocalStorageSetting<string>(CODE_BLOCK_MAX_HEIGHT_KEY, CODE_BLOCK_MAX_HEIGHT_DEFAULT) ?? CODE_BLOCK_MAX_HEIGHT_DEFAULT;
     const typewriterMode = getGlobalLocalStorageSetting<boolean>(TYPEWRITER_MODE_KEY, false) === true;
-    return `<div class="${SETTINGS_PANEL_CLASS}">
+
+    let group: string;
+    switch (section) {
+        case "mode":
+            group = buildEditModeSegmentedHTML(vditor.currentMode);
+            break;
+        case "font":
+            group = buildFontSizeStepperHTML(UI_FONT_SIZE_KEY, "UI", uiSize)
+                + buildFontSizeStepperHTML(EDITOR_FONT_SIZE_KEY, "Editor", editorSize);
+            break;
+        case "typography":
+            group = buildDropdownHTML(FONT_FAMILY_KEY, "Font", FONT_FAMILY_OPTIONS, fontFamily)
+                + buildDropdownHTML(BOLD_COLOR_KEY, i18n.boldColor ?? "Bold Color", getBoldColorOptions(), boldColor)
+                + buildDropdownHTML(PAGE_WIDTH_KEY, i18n.pageWidth, PAGE_WIDTH_OPTIONS, pageWidth)
+                + buildLineHeightStepperHTML(lineHeight)
+                + buildToggleHTML(TYPEWRITER_MODE_KEY, i18n.typewriterMode ?? "Typewriter Mode", typewriterMode);
+            break;
+        case "codemirror":
+            group = buildDropdownHTML(CODE_FONT_FAMILY_KEY, "Font", getCodeFontFamilyOptions(), codeFontFamily)
+                + buildDropdownHTML(CODE_BLOCK_MAX_HEIGHT_KEY, i18n.codeBlockHeight, CODE_BLOCK_MAX_HEIGHT_OPTIONS, codeBlockMaxHeight);
+            break;
+        case "imageSize":
+            group = buildImageStepperHTML(IMAGE_MAX_WIDTH_KEY, i18n.imageMaxWidth, imgMaxWidth, "%")
+                + buildImageStepperHTML(IMAGE_MAX_HEIGHT_KEY, i18n.imageMaxHeight, imgMaxHeight, "vh");
+            break;
+        case "image":
+            group = buildImageSettingsGroupHTML(vditor.options.imageSettings);
+            break;
+    }
+    // 图像组自带 __group 容器，其余分类在此统一包裹，避免双层嵌套
+    const content = section === "image"
+        ? group
+        : `<div class="${SETTINGS_PANEL_CLASS}__group">${group}</div>`;
+    return `<div class="${SETTINGS_PANEL_CLASS}__view">
+        ${buildSettingsHeaderHTML(section)}
         <div class="${SETTINGS_PANEL_CLASS}__section">
-            <div class="${SETTINGS_PANEL_CLASS}__title">Edit Mode</div>
-            ${buildEditModeSegmentedHTML(vditor.currentMode)}
+            ${content}
         </div>
-        <div class="${SETTINGS_PANEL_CLASS}__section">
-            <div class="${SETTINGS_PANEL_CLASS}__title">Font Size</div>
-            <div class="${SETTINGS_PANEL_CLASS}__group">
-                ${buildFontSizeStepperHTML(UI_FONT_SIZE_KEY, "UI", uiSize)}
-                ${buildFontSizeStepperHTML(EDITOR_FONT_SIZE_KEY, "Editor", editorSize)}
-            </div>
-        </div>
-        <div class="${SETTINGS_PANEL_CLASS}__section">
-            <div class="${SETTINGS_PANEL_CLASS}__title">Typography</div>
-            <div class="${SETTINGS_PANEL_CLASS}__group">
-                ${buildDropdownHTML(FONT_FAMILY_KEY, "Font", FONT_FAMILY_OPTIONS, fontFamily)}
-                ${buildDropdownHTML(BOLD_COLOR_KEY, i18n.boldColor ?? "Bold Color", getBoldColorOptions(), boldColor)}
-                ${buildDropdownHTML(PAGE_WIDTH_KEY, i18n.pageWidth, PAGE_WIDTH_OPTIONS, pageWidth)}
-                ${buildLineHeightStepperHTML(lineHeight)}
-                ${buildToggleHTML(TYPEWRITER_MODE_KEY, i18n.typewriterMode ?? "Typewriter Mode", typewriterMode)}
-            </div>
-        </div>
-        <div class="${SETTINGS_PANEL_CLASS}__section">
-            <div class="${SETTINGS_PANEL_CLASS}__title">CodeMirror</div>
-            <div class="${SETTINGS_PANEL_CLASS}__group">
-                ${buildDropdownHTML(CODE_FONT_FAMILY_KEY, "Font", getCodeFontFamilyOptions(), codeFontFamily)}
-                ${buildDropdownHTML(CODE_BLOCK_MAX_HEIGHT_KEY, i18n.codeBlockHeight, CODE_BLOCK_MAX_HEIGHT_OPTIONS, codeBlockMaxHeight)}
-            </div>
-        </div>
-        <div class="${SETTINGS_PANEL_CLASS}__section">
-            <div class="${SETTINGS_PANEL_CLASS}__title">${i18n.imageSize}</div>
-            <div class="${SETTINGS_PANEL_CLASS}__group">
-                ${buildImageStepperHTML(IMAGE_MAX_WIDTH_KEY, i18n.imageMaxWidth, imgMaxWidth, "%")}
-                ${buildImageStepperHTML(IMAGE_MAX_HEIGHT_KEY, i18n.imageMaxHeight, imgMaxHeight, "vh")}
-            </div>
-        </div>
-        ${buildImageSettingsSectionHTML(vditor.options.imageSettings)}
-        ${buildSettingsFooterHTML()}
     </div>`;
 };
 
+/** 按当前导航状态渲染面板（panelElement.dataset.section：menu 或分类 id） */
+export const renderSettingsView = (panelElement: HTMLElement, vditor: IVditor) => {
+    const section = (panelElement.dataset.section || "menu") as SettingsSectionId | "menu";
+    const view = section === "menu"
+        ? buildSettingsMenuHTML(vditor)
+        : buildSettingsSectionViewHTML(section, vditor);
+    panelElement.innerHTML = `<div class="${SETTINGS_PANEL_CLASS}">${view}</div>`;
+};
+
 export const refreshSettingsPanel = (panelElement: HTMLElement, vditor: IVditor) => {
-    for (const button of panelElement.querySelectorAll(`.${SETTINGS_PANEL_CLASS}__segment[data-mode]`)) {
-        const mode = button.getAttribute("data-mode") || "";
-        const isCurrent = mode === vditor.currentMode;
-        button.classList.toggle(`${SETTINGS_PANEL_CLASS}__segment--current`, isCurrent);
-        button.setAttribute("aria-pressed", String(isCurrent));
-    }
+    renderSettingsView(panelElement, vditor);
 };
 
 const isAISettingsAddRowOpen = (panelElement: HTMLElement, selector: string) => {
