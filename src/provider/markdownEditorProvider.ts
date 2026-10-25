@@ -52,7 +52,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
 
     private static legacyGlobalStatePurged = false;
 
-    private countStatus: vscode.StatusBarItem;
+    private countStatus: vscode.StatusBarItem | undefined;
     private aiAbortController: AbortController | null = null;
     private aiCancellationSource: vscode.CancellationTokenSource | null = null;
 
@@ -66,7 +66,8 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     constructor(
         private context: vscode.ExtensionContext, private options: MarkdownEditorProviderOptions = {}
     ) {
-        this.countStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+        // 状态栏行列/字数条目不再注册：统计已由工具栏的 Typora 风格计数器承担，保留实现备查
+        // this.countStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
         this.purgeLegacyGlobalState();
         MarkdownEditorProvider.registerConfigSync(this.context);
     }
@@ -167,9 +168,9 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             Holder.activeDocument = e.webviewPanel.visible ? document : Holder.activeDocument
             if (e.webviewPanel.visible) {
                 this.updateCount(content)
-                this.countStatus.show()
+                this.countStatus?.show()
             } else {
-                this.countStatus.hide()
+                this.countStatus?.hide()
             }
         });
 
@@ -218,7 +219,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
                 viewerSettings,
             })
             this.updateCount(content)
-            this.countStatus.show()
+            this.countStatus?.show()
         }).on("externalUpdate", e => {
             const updatedText = e.document.getText()?.replace(/\r/g, '');
             // A delayed writeback can arrive after the webview has already sent newer edits.
@@ -516,6 +517,9 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     }
 
     private updateCount(content: string) {
+        if (!this.countStatus) {
+            return;
+        }
         this.countStatus.text = i18n('ext.markdown.statusBar', String(content.split(/\r\n|\r|\n/).length), String(content.length))
     }
 
