@@ -21,5 +21,7 @@
 	"ext.markdown.customAiUrlRequired": "사용자 지정 AI: API URL이 필요합니다.",
 	"ext.markdown.customAiPolishFailed": "사용자 지정 AI 다듬기 실패: $1",
 	"ext.markdown.selectImage": "이미지 선택",
+	"ext.markdown.imageUploadFailed": "이미지 업로드에 실패했습니다. 이미지는 문서 이름 폴더에 저장되었습니다.",
+	"ext.markdown.imageDeleteFailed": "이미지 파일 삭제 실패: $1",
 	"ext.markdown.statusBar": "줄 $1 글자 수 $2"
 }

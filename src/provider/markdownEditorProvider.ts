@@ -1,5 +1,5 @@
 import { adjustImgPath, getWorkspacePath } from '@/common/fileUtil';
-import { dirname, isAbsolute, join, parse, resolve } from 'path';
+import { dirname, isAbsolute, join, normalize, parse, relative, resolve } from 'path';
 import { tmpdir } from 'os';
 import { rmSync, writeFileSync } from 'fs';
 import * as vscode from 'vscode';
@@ -353,6 +353,8 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
                 }
             }
             handler.emit('markdownConfig', { imageRules: MarkdownEditorProvider.buildImageRules() });
+        }).on("deleteImageFile", (src: string) => {
+            void this.deleteLocalImageFile(uri, src);
         }).on("editInVSCode", (full: boolean) => {
             const side = full ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
             vscode.commands.executeCommand('vscode.openWith', uri, "default", side);
@@ -635,8 +637,97 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
         return `![${fileName}](${adjustRelPath})`;
     }
 
-    /** 网络图片按规则落盘；下载失败返回 undefined（调用方回退为原样插入 URL） */
-    private async saveWebImageAndBuildMarkdown(
+    /** 删除图片引用对应的落盘文件：仅本地路径、限工作区边界内，桌面端进回收站 */
+    private async deleteLocalImageFile(documentUri: vscode.Uri, src: string): Promise<void> {
+        if (!src || /^[a-z][a-z0-9+.-]*:/i.test(src) || src.startsWith('//') || src.startsWith('#')) {
+            return; // 远程/内联/协议地址无对应落盘文件
+        }
+        const candidates = [src];
+        try {
+            const decoded = decodeURIComponent(src);
+            if (decoded !== src) {
+                candidates.push(decoded);
+            }
+        } catch {
+            // 保留原始形式
+        }
+        for (const candidate of candidates) {
+            const imageUri = this.resolveLocalImageUri(documentUri, candidate);
+            if (!imageUri) {
+                continue;
+            }
+            try {
+                await vscode.workspace.fs.stat(imageUri);
+            } catch {
+                continue;
+            }
+            try {
+                await vscode.workspace.fs.delete(imageUri, { useTrash: !this.options.isWeb });
+            } catch (err: any) {
+                vscode.window.showWarningMessage(i18n('ext.markdown.imageDeleteFailed', String(err?.message ?? err)));
+                return;
+            }
+            await this.removeEmptyImageDirs(imageUri, documentUri);
+            return;
+        }
+    }
+
+    /** 把文档内的图片引用解析为工作区边界内的绝对路径；无法安全解析时返回 undefined */
+    private resolveLocalImageUri(documentUri: vscode.Uri, src: string): vscode.Uri | undefined {
+        const docDir = dirname(documentUri.fsPath);
+        const reference = src.replace(/\\/g, '/');
+        const workspacePath = getWorkspacePath(documentUri);
+        let absolute: string;
+        if (isAbsolute(reference)) {
+            absolute = reference;
+        } else if (reference.startsWith('/')) {
+            // ${workspaceDir} 模板的引用形式：相对工作区根
+            if (!workspacePath) {
+                return undefined;
+            }
+            absolute = `${workspacePath}/${reference.replace(/^\/+/, '')}`;
+        } else {
+            absolute = `${docDir}/${reference}`;
+        }
+        const normalized = normalize(absolute);
+        const boundary = normalize(workspacePath ?? docDir);
+        const rel = relative(boundary, normalized);
+        if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
+            return undefined;
+        }
+        return vscode.Uri.file(normalized);
+    }
+
+    /** 图片删除后向上清理空目录（止步于文档目录或工作区根） */
+    private async removeEmptyImageDirs(imageUri: vscode.Uri, documentUri: vscode.Uri): Promise<void> {
+        const docDir = normalize(dirname(documentUri.fsPath));
+        const workspacePath = getWorkspacePath(documentUri);
+        const boundary = normalize(workspacePath ?? docDir);
+        let dir = normalize(dirname(imageUri.fsPath));
+        while (true) {
+            const rel = relative(boundary, dir);
+            if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
+                break;
+            }
+            let entries: [string, vscode.FileType][];
+            try {
+                entries = await vscode.workspace.fs.readDirectory(vscode.Uri.file(dir));
+            } catch {
+                break;
+            }
+            if (entries.length > 0) {
+                break;
+            }
+            try {
+                await vscode.workspace.fs.delete(vscode.Uri.file(dir));
+            } catch {
+                break;
+            }
+            dir = dirname(dir);
+        }
+    }
+
+    /** 网络图片按规则落盘；下载失败返回 undefined（调用方回退为原样插入 URL） */    private async saveWebImageAndBuildMarkdown(
         documentUri: vscode.Uri,
         url: string,
         documentContent: string,

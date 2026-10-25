@@ -21,5 +21,7 @@
 	"ext.markdown.customAiUrlRequired": "自訂 AI：API URL 為必填項。",
 	"ext.markdown.customAiPolishFailed": "自訂 AI 潤色失敗：$1",
 	"ext.markdown.selectImage": "選擇圖片",
+	"ext.markdown.imageUploadFailed": "圖片上傳失敗，已儲存到文件同名目錄。",
+	"ext.markdown.imageDeleteFailed": "刪除圖片檔案失敗：$1",
 	"ext.markdown.statusBar": "行 $1 字數 $2"
 }

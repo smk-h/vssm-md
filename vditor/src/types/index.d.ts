@@ -613,6 +613,11 @@ interface IOptions {
      * 返回 false/null 表示规则未启用，core 走原渲染路径保持旧行为。
      */
     onPasteWebImage?(url: string, files?: File[]): boolean | void;
+    /**
+     * 图片引用被删除时触发（悬浮工具栏的删除按钮/快捷键）。
+     * src 为文档中的原始引用路径；是否删除落盘文件由宿主决定（远程地址等应忽略）。
+     */
+    onDeleteImageFile?(src: string): void;
     /** 配置自建 CDN 地址。默认值: 'https://unpkg.com/vditor@${VDITOR_VERSION}' */
     cdn?: string;
     /** tab 键操作字符串，支持 \t 及任意字符串 */

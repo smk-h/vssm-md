@@ -21,5 +21,7 @@
 	"ext.markdown.customAiUrlRequired": "Пользовательский ИИ: требуется URL API.",
 	"ext.markdown.customAiPolishFailed": "Ошибка пользовательского ИИ-редактирования: $1",
 	"ext.markdown.selectImage": "Выбрать изображение",
+	"ext.markdown.imageUploadFailed": "Не удалось загрузить изображение. Оно было сохранено в папке с именем документа.",
+	"ext.markdown.imageDeleteFailed": "Не удалось удалить файл изображения: $1",
 	"ext.markdown.statusBar": "Строка $1 Символов $2"
 }

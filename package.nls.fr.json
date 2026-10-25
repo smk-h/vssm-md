@@ -21,5 +21,7 @@
 	"ext.markdown.customAiUrlRequired": "IA personnalisée : l'URL de l'API est requise.",
 	"ext.markdown.customAiPolishFailed": "Échec de la correction IA personnalisée : $1",
 	"ext.markdown.selectImage": "Sélectionner une image",
+	"ext.markdown.imageUploadFailed": "Échec du téléversement de l'image. L'image a été enregistrée dans le dossier du même nom que le document.",
+	"ext.markdown.imageDeleteFailed": "Échec de la suppression du fichier image : $1",
 	"ext.markdown.statusBar": "Ligne $1 Caractères $2"
 }

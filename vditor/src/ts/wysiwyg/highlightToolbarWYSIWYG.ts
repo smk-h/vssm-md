@@ -753,10 +753,18 @@ export const genImagePopoverForElement = (vditor: IVditor, imgElement: HTMLImage
     };
 
     const removeImage = () => {
+        // 删除引用时通知宿主：文档中无其他同源引用时，连带删除落盘图片（是否删除由宿主决定）
+        const imageSrc = imgElement.dataset.workspaceAbsoluteSrc || imgElement.getAttribute("src") || "";
+        const hasOtherReference = imageSrc
+            ? vditor.element.querySelectorAll(`img[src="${CSS.escape(imageSrc)}"]`).length > 1
+            : true;
         const range = getEditorRange(vditor);
         range.setStartBefore(imgElement);
         range.collapse(true);
         imgElement.remove();
+        if (!hasOtherReference && imageSrc && typeof vditor.options.onDeleteImageFile === "function") {
+            vditor.options.onDeleteImageFile(imageSrc);
+        }
         setSelectionFocus(range);
         clearTimeout(vditor.wysiwyg.afterRenderTimeoutId);
         vditor.undo.addToUndoStack(vditor);

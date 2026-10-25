@@ -129,6 +129,10 @@ handler.on("open", async (md) => {
       handler.emit('imgUrl', url)
       return true
     },
+    // 删除图片引用时通知宿主，由宿主决定是否删除落盘文件
+    onDeleteImageFile(src) {
+      handler.emit('deleteImageFile', src)
+    },
     onSettingsChange(settings) {
       handler.emit('syncViewerSettings', settings)
     },

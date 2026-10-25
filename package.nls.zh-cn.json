@@ -22,5 +22,6 @@
 	"ext.markdown.customAiPolishFailed": "自定义 AI 润色失败：$1",
 	"ext.markdown.selectImage": "选择图片",
 	"ext.markdown.imageUploadFailed": "图片上传失败，已保存到文档同名目录。",
+	"ext.markdown.imageDeleteFailed": "删除图片文件失败：$1",
 	"ext.markdown.statusBar": "行 $1 字数 $2"
 }

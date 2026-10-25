@@ -21,5 +21,7 @@
 	"ext.markdown.customAiUrlRequired": "IA personalizada: a URL da API é obrigatória.",
 	"ext.markdown.customAiPolishFailed": "Falha no polimento com IA personalizada: $1",
 	"ext.markdown.selectImage": "Selecionar imagem",
+	"ext.markdown.imageUploadFailed": "Falha ao enviar a imagem. A imagem foi salva na pasta com o mesmo nome do documento.",
+	"ext.markdown.imageDeleteFailed": "Falha ao excluir o arquivo de imagem: $1",
 	"ext.markdown.statusBar": "Linha $1 Caracteres $2"
 }

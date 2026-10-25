@@ -21,5 +21,7 @@
 	"ext.markdown.customAiUrlRequired": "カスタム AI: API URL は必須です。",
 	"ext.markdown.customAiPolishFailed": "カスタム AI 校正に失敗しました: $1",
 	"ext.markdown.selectImage": "画像を選択",
+	"ext.markdown.imageUploadFailed": "画像のアップロードに失敗しました。画像はドキュメント名のフォルダーに保存されました。",
+	"ext.markdown.imageDeleteFailed": "画像ファイルの削除に失敗しました: $1",
 	"ext.markdown.statusBar": "行 $1 文字数 $2"
 }

@@ -21,5 +21,7 @@
 	"ext.markdown.customAiUrlRequired": "IA personalizada: se requiere la URL de la API.",
 	"ext.markdown.customAiPolishFailed": "Error en el pulido con IA personalizada: $1",
 	"ext.markdown.selectImage": "Seleccionar imagen",
+	"ext.markdown.imageUploadFailed": "Error al subir la imagen. La imagen se guardó en la carpeta con el nombre del documento.",
+	"ext.markdown.imageDeleteFailed": "Error al eliminar el archivo de imagen: $1",
 	"ext.markdown.statusBar": "Línea $1 Caracteres $2"
 }

@@ -21,5 +21,7 @@
 	"ext.markdown.customAiUrlRequired": "Benutzerdefinierte AI: API-URL ist erforderlich.",
 	"ext.markdown.customAiPolishFailed": "Benutzerdefinierte AI-Korrektur fehlgeschlagen: $1",
 	"ext.markdown.selectImage": "Bild auswählen",
+	"ext.markdown.imageUploadFailed": "Bildupload fehlgeschlagen. Das Bild wurde im Ordner mit dem Dokumentnamen gespeichert.",
+	"ext.markdown.imageDeleteFailed": "Löschen der Bilddatei fehlgeschlagen: $1",
 	"ext.markdown.statusBar": "Zeile $1 Zeichen $2"
 }
