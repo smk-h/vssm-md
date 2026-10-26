@@ -53,6 +53,7 @@ import {
 import { afterRenderEvent } from "./ts/wysiwyg/afterRenderEvent";
 import { renderToc } from "./ts/util/toc";
 import { scrollToBlock as scrollToBlockUtil } from "./ts/util/scrollToBlock";
+import { getSourceAnchorLine, scrollToSourceLine as scrollToSourceLineUtil } from "./ts/util/sourceLineMap";
 import { configureHistoryDeferByDocumentLength } from "./ts/util/historySchedule";
 import { isDocumentDirty, markDocumentSaved, updateSaveToolbarState } from "./ts/util/saveToolbarState";
 import {
@@ -268,6 +269,16 @@ class Vditor {
     /** 滚动到块引用或标题 fragment（如 ^block-id 或标题 slug） */
     public scrollToBlock(fragment: string) {
         return scrollToBlockUtil(this.vditor, fragment);
+    }
+
+    /** 获取当前锚点（光标块/首个可见块）对应的 Markdown 源码行号（1 基） */
+    public getSourceAnchorLine(): number | null {
+        return getSourceAnchorLine(this.vditor);
+    }
+
+    /** 滚动到 Markdown 源码行号对应的块（从源码编辑器切回时保持阅读位置）；placeCaret 时把光标放入该块 */
+    public scrollToSourceLine(line: number, placeCaret = false): boolean {
+        return scrollToSourceLineUtil(this.vditor, line, placeCaret);
     }
 
     /** 上传是否还在进行中 */

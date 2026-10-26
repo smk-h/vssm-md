@@ -25,8 +25,11 @@ import { streamCustomAI } from '@/service/ai/customAIClient';
 import { buildAIOutputLanguageInstruction } from '@/service/ai/aiOutputLanguage';
 import {
     broadcastToMarkdownWebviews,
+    cancelWebviewSwitchFallback,
     consumePendingBlockScroll,
+    consumePendingSourceLine,
     registerMarkdownWebview,
+    revealTextEditorLine,
     unregisterMarkdownWebview,
 } from '@/service/markdown/blockScroll';
 import { ViewerSettingsService } from '@/service/viewerSettingsService';
@@ -242,6 +245,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
                 workspaceBaseUrl: workspaceUri ? webview.asWebviewUri(workspaceUri).toString().replace(/\?.+$/, '') : '',
                 documentCacheId: `${uri.scheme}:${uri.toString()}`,
                 pendingFragment: consumePendingBlockScroll(uri),
+                pendingSourceLine: consumePendingSourceLine(uri),
                 shouldRestoreFocus: config.get<boolean>("restoreViewState", false),
                 config: this.getMarkdownWebviewConfig(config),
                 viewerSettings,
@@ -355,9 +359,17 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             handler.emit('markdownConfig', { imageRules: MarkdownEditorProvider.buildImageRules() });
         }).on("deleteImageFile", (src: string) => {
             void this.deleteLocalImageFile(uri, src);
-        }).on("editInVSCode", (full: boolean) => {
+        }).on("editInVSCode", async (payload: boolean | { full?: boolean; line?: number | null }) => {
+            cancelWebviewSwitchFallback();
+            const full = typeof payload === "object" && payload !== null ? payload.full !== false : !!payload;
+            const line = typeof payload === "object" && payload !== null ? payload.line : undefined;
+            // 先把 webview 的最新内容落盘，避免源码编辑器打开旧文本
+            await flushDocumentSync();
             const side = full ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
-            vscode.commands.executeCommand('vscode.openWith', uri, "default", side);
+            await vscode.commands.executeCommand('vscode.openWith', uri, "default", side);
+            if (typeof line === "number" && line >= 1) {
+                revealTextEditorLine(uri, line);
+            }
         }).on("showInFolder", () => {
             if (vscode.env.uiKind !== vscode.UIKind.Web) {
                 vscode.commands.executeCommand('revealFileInOS', uri);

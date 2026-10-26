@@ -50,7 +50,7 @@ const findFootnoteElement = (editorElement: HTMLElement, label: string): HTMLEle
     return null;
 };
 
-const scrollBlockIntoView = (vditor: IVditor, blockElement: HTMLElement) => {
+export const scrollBlockIntoView = (vditor: IVditor, blockElement: HTMLElement) => {
     const editorElement = vditor[vditor.currentMode].element;
     if (vditor.options.height === "auto") {
         let windowScrollY = blockElement.offsetTop + vditor.element.offsetTop;

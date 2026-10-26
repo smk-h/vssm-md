@@ -7,7 +7,7 @@ function loadRes(url) {
 const isMac = navigator.userAgent.includes('Mac OS');
 const shortcutTip = isMac ? '⌘ ^ E' : 'Ctrl Alt E';
 
-export async function getToolbar(resPath, onSave = null) {
+export async function getToolbar(resPath, onSave = null, onEditInVscode = null) {
     const codicon = (name) => `<span class="codicon codicon-${name}" aria-hidden="true"></span>`;
     return [
         'outline',
@@ -23,7 +23,7 @@ export async function getToolbar(resPath, onSave = null) {
             className: 'right',
             icon: codicon('vscode'),
             click() {
-                handler.emit("editInVSCode", true)
+                onEditInVscode?.()
             }
         },
         {
@@ -262,7 +262,10 @@ export const bindShortcut = (handler, editor, workspaceBaseUrl = '') => {
         if (matchShortcut('^⌘e', e) || matchShortcut('^!e', e)) {
             e.stopPropagation();
             e.preventDefault();
-            return handler.emit("editInVSCode", true);
+            return handler.emit("editInVSCode", {
+                full: true,
+                line: typeof editor?.getSourceAnchorLine === 'function' ? editor.getSourceAnchorLine() : null,
+            });
         }
 
         if (e.code == 'F12') return handler.emit('developerTool')

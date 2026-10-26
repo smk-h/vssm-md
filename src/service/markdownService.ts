@@ -9,6 +9,7 @@ import { homedir } from 'os';
 import path, { dirname, extname, isAbsolute, join, parse } from 'path';
 import * as vscode from 'vscode';
 import { Holder } from './markdown/holder';
+import { notifySourceLineScroll, requestWebviewSwitchToSource } from './markdown/blockScroll';
 import { convertMd } from "./markdown/markdown-pdf";
 import { Global, i18n } from "@/common/global";
 
@@ -257,8 +258,23 @@ export class MarkdownService {
     public switchEditor(uri: vscode.Uri) {
         const editor = vscode.window.activeTextEditor;
         if (!uri) uri = editor?.document.uri;
-        const type = editor ? 'cweijan.markdownViewer' : 'default';
-        vscode.commands.executeCommand('vscode.openWith', uri, type);
+        if (!uri) return;
+        if (editor && editor.document.uri.toString() === uri.toString()) {
+            // 源码 -> 预览：带上当前阅读位置（光标可见时用光标行，否则可视区首行）
+            const visibleRange = editor.visibleRanges[0];
+            const cursor = editor.selection.active;
+            const line = visibleRange && visibleRange.contains(cursor)
+                ? cursor.line
+                : (visibleRange?.start.line ?? cursor.line);
+            notifySourceLineScroll(uri, line + 1);
+            vscode.commands.executeCommand('vscode.openWith', uri, 'cweijan.markdownViewer');
+        } else {
+            // 预览 -> 源码（标题栏图标入口）：交给 webview 计算锚点后走 editInVSCode 统一链路；
+            // webview 不可用时直接打开
+            if (!requestWebviewSwitchToSource(uri)) {
+                vscode.commands.executeCommand('vscode.openWith', uri, 'default');
+            }
+        }
     }
 
 }

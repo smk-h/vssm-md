@@ -2170,14 +2170,14 @@ export const flushCodeMirrorToSyncCode = (vditor: IVditor) => {
     }
 };
 
-/** 导出 Markdown 前同步 CM 状态；Lute 直接识别 CM DOM，无需再篡改 DOM */
-export const buildEditorHtmlForMarkdown = (vditor: IVditor) => {
+/** 同步 CM/公式/头信息并生成清洗后的编辑器克隆，供 Markdown 序列化使用 */
+export const buildCleanEditorClone = (vditor: IVditor): HTMLElement | null => {
     flushCodeMirrorToSyncCode(vditor);
     flushInlineMathToSyncCode(vditor[vditor.currentMode].element);
     flushFrontMatterYamlToSyncCode(vditor);
     const editor = getModeEditor(vditor);
     if (!editor) {
-        return "";
+        return null;
     }
     const clone = editor.cloneNode(true) as HTMLElement;
     for (const el of clone.querySelectorAll(".vditor-cm-chrome, .cm-editor, .vditor-editor-boundary")) {
@@ -2198,5 +2198,11 @@ export const buildEditorHtmlForMarkdown = (vditor: IVditor) => {
             parts.code.style.display = "";
         }
     }
-    return clone.innerHTML;
+    return clone;
+};
+
+/** 导出 Markdown 前同步 CM 状态；Lute 直接识别 CM DOM，无需再篡改 DOM */
+export const buildEditorHtmlForMarkdown = (vditor: IVditor) => {
+    const clone = buildCleanEditorClone(vditor);
+    return clone ? clone.innerHTML : "";
 };

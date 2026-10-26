@@ -18,7 +18,7 @@ const renameFileFromUrl = (file, url) => {
 };
 
 handler.on("open", async (md) => {
-  const { content, rootPath, workspaceBaseUrl, documentCacheId, pendingFragment, shouldRestoreFocus, config, fileName } = md;
+  const { content, rootPath, workspaceBaseUrl, documentCacheId, pendingFragment, pendingLine, shouldRestoreFocus, config, fileName } = md;
   window.__officeMarkdownFileName = fileName || 'Note';
   const {
     language, isWeb, isDev, markdown,
@@ -62,6 +62,11 @@ handler.on("open", async (md) => {
     toolbar: await getToolbar(rootPath, () => {
       handler.emit('doSave', getMarkdownValue());
       editor?.markSaved();
+    }, () => {
+      handler.emit('editInVSCode', {
+        full: true,
+        line: typeof editor?.getSourceAnchorLine === 'function' ? editor.getSourceAnchorLine() : null,
+      });
     }),
     onAboutOpen: () => handler.emit('openAbout'),
     onSponsorLogoClick: () => handler.emit('openSponsor'),
@@ -237,6 +242,18 @@ handler.on("open", async (md) => {
           editor.scrollToBlock(fragment);
         }
       })
+      handler.on("gotoSourceLine", (line) => {
+        if (typeof line === 'number' && line >= 1) {
+          editor.scrollToSourceLine(line, true);
+        }
+      })
+      // 标题栏图标入口：宿主先要锚点行，再走 editInVSCode 统一链路（落盘+打开+定位）
+      handler.on("switchToSource", () => {
+        handler.emit('editInVSCode', {
+          full: true,
+          line: typeof editor?.getSourceAnchorLine === 'function' ? editor.getSourceAnchorLine() : null,
+        });
+      })
       handler.emit('queryAIAvailable')
       handler.on("aiAvailable", (available) => {
         setAIAvailable(available, editor)
@@ -253,12 +270,19 @@ handler.on("open", async (md) => {
       handler.on('aiPolishEnd', () => {
         editor.endAIStream()
       })
-      editor.restoreDocumentSession(true, !!shouldRestoreFocus)
+      // 会话恢复内部是 rAF 异步应用，会覆盖随后的跳转；有跳转目标时跳过恢复
+      const hasPendingJump = !!pendingFragment || (typeof pendingLine === 'number' && pendingLine >= 1);
+      if (!hasPendingJump) {
+        editor.restoreDocumentSession(true, !!shouldRestoreFocus)
+      }
       if (pendingFragment) {
         editor.scrollToBlock(pendingFragment);
+      } else if (typeof pendingLine === 'number' && pendingLine >= 1) {
+        editor.scrollToSourceLine(pendingLine, true);
       }
     }
   })
   bindShortcut(handler, editor, workspaceBaseUrl);
   createContextMenu(editor)
+  window.__vditorEditor = editor;
 }).emit("init")
