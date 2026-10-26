@@ -41,6 +41,25 @@ const countNewlines = (text: string): number => {
     return count;
 };
 
+/**
+ * 宿主文档的实际文本（磁盘原文）。行号表优先对它对齐：
+ * DOM 重新序列化会产生归一化文本（块间一律空行），紧凑写法的原文与它行号不一致，
+ * 直接用序列化文本对齐会导致切换行号随紧凑块数量累积偏移。
+ */
+const sourceReferences = new WeakMap<IVditor, string>();
+
+export const setSourceReference = (vditor: IVditor, text: string | null | undefined) => {
+    if (typeof text === "string" && text.length > 0) {
+        sourceReferences.set(vditor, text.replace(/\r\n?/g, "\n"));
+    } else {
+        sourceReferences.delete(vditor);
+    }
+};
+
+const getSourceReference = (vditor: IVditor): string | undefined => {
+    return sourceReferences.get(vditor);
+};
+
 type SourceLineIndex = {
     blocks: HTMLElement[];
     /** 每个顶层块对应的源码起始行（1 基） */
@@ -80,15 +99,49 @@ const createSourceLineIndex = (vditor: IVditor): SourceLineIndex | null => {
             : vditor.lute.VditorDOM2Md(wrapper.innerHTML);
     };
 
-    const fullText = serializeRange(0, blocks.length);
+    // 单块序列化只算一次，原文对齐与回退对齐两条路径复用
+    const blockMds: string[] = [];
+    for (let i = 0; i < blocks.length; i++) {
+        blockMds.push(serializeRange(i, i + 1).replace(/\s+$/, ""));
+    }
 
+    // 优先对宿主原文对齐；逐块 md 在原文中各就各位，块间空行差异不影响行号。
+    // 原文与 DOM 严重不一致（外部改动未同步等）时匹配率过低，回退序列化文本
+    const reference = getSourceReference(vditor);
+    if (reference) {
+        let matched = 0;
+        let nonEmpty = 0;
+        let searchFromRef = 0;
+        const refLines: number[] = [];
+        let lastStartLine = 1;
+        for (let i = 0; i < blocks.length; i++) {
+            const blockMd = blockMds[i];
+            let startLine = lastStartLine;
+            if (blockMd) {
+                nonEmpty++;
+                const idx = reference.indexOf(blockMd, searchFromRef);
+                if (idx >= 0) {
+                    startLine = 1 + countNewlines(reference.slice(0, idx));
+                    searchFromRef = idx + blockMd.length;
+                    matched++;
+                }
+            }
+            refLines.push(startLine);
+            lastStartLine = startLine;
+        }
+        if (nonEmpty === 0 || matched >= Math.ceil(nonEmpty / 2)) {
+            return { blocks, startLines: refLines, fullText: reference };
+        }
+    }
+
+    const fullText = serializeRange(0, blocks.length);
     // 逐块序列化并在全文中顺序对齐，得到每块的源码起始行；
     // 个别块对不上（如图片 URL 被宿主重写）时沿用上一块的行号做近似
     let searchFrom = 0;
     let lastStartLine = 1;
     const startLines: number[] = [];
     for (let i = 0; i < blocks.length; i++) {
-        const blockMd = serializeRange(i, i + 1).replace(/\s+$/, "");
+        const blockMd = blockMds[i];
         let startLine = lastStartLine;
         if (blockMd) {
             const idx = fullText.indexOf(blockMd, searchFrom);

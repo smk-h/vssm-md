@@ -53,7 +53,7 @@ import {
 import { afterRenderEvent } from "./ts/wysiwyg/afterRenderEvent";
 import { renderToc } from "./ts/util/toc";
 import { scrollToBlock as scrollToBlockUtil } from "./ts/util/scrollToBlock";
-import { getSourceAnchorLine, scrollToSourceLine as scrollToSourceLineUtil } from "./ts/util/sourceLineMap";
+import { getSourceAnchorLine, scrollToSourceLine as scrollToSourceLineUtil, setSourceReference } from "./ts/util/sourceLineMap";
 import { configureHistoryDeferByDocumentLength } from "./ts/util/historySchedule";
 import { isDocumentDirty, markDocumentSaved, updateSaveToolbarState } from "./ts/util/saveToolbarState";
 import {
@@ -279,6 +279,14 @@ class Vditor {
     /** 滚动到 Markdown 源码行号对应的块（从源码编辑器切回时保持阅读位置）；placeCaret 时把光标放入该块 */
     public scrollToSourceLine(line: number, placeCaret = false): boolean {
         return scrollToSourceLineUtil(this.vditor, line, placeCaret);
+    }
+
+    /**
+     * 记录宿主文档的实际文本（磁盘原文）。源码行映射优先对它对齐，
+     * 避免归一化序列化文本与紧凑原文行号不一致导致切换定位累积偏移
+     */
+    public setSourceReference(text: string | null | undefined) {
+        setSourceReference(this.vditor, text);
     }
 
     /** 上传是否还在进行中 */

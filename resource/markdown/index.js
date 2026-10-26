@@ -145,7 +145,10 @@ handler.on("open", async (md) => {
       handler.emit('editViewerSettings', editor.exportViewerSettings())
     },
     input(content) {
-      handler.emit("save", restoreWorkspaceBaseUrls(content, workspaceBaseUrl))
+      const emitted = restoreWorkspaceBaseUrls(content, workspaceBaseUrl);
+      handler.emit("save", emitted)
+      // 宿主即将把 emitted 写为文档文本，同步更新行号对齐基准
+      if (typeof editor?.setSourceReference === 'function') editor.setSourceReference(emitted);
     },
     upload: {
       url: '/image',
@@ -187,6 +190,8 @@ handler.on("open", async (md) => {
     },
     after() {
       bindLinkErrors(handler, editor);
+      // 行号对齐基准 = 宿主给的文档原文（未归一化）
+      if (typeof editor.setSourceReference === 'function') editor.setSourceReference(content);
       const { viewerSettings } = md;
       observeWorkspaceAbsoluteImages(document.getElementById('vditor'), workspaceBaseUrl);
       if (viewerSettings?.enabled) {
@@ -231,6 +236,7 @@ handler.on("open", async (md) => {
         if (getMarkdownValue() === content) {
           return;
         }
+        editor.setSourceReference(content);
         editor.setValue(content);
         editor.markSaved();
       })
