@@ -332,6 +332,8 @@ window.addEventListener('message', function (event) {
         workspaceBaseUrl: '',
         documentCacheId: 'web-preview:' + (curPath || 'demo'),
         pendingFragment: undefined,
+        // 调试用：localStorage['dbg-pending-line'] 模拟宿主切换时携带的源码行
+        pendingLine: Number(localStorage.getItem('dbg-pending-line')) || undefined,
         shouldRestoreFocus: false,
         fileName: (curPath || 'preview.md').split('/').pop(),
         config: {
@@ -387,7 +389,7 @@ window.addEventListener('message', function (event) {
     case 'scroll':
       break;
     default:
-      log('宿主事件: ' + data.type);
+      log('宿主事件: ' + data.type + ' ' + JSON.stringify(data.content));
   }
 });
 
