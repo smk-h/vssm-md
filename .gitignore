@@ -13,3 +13,4 @@ test/output
 .tmp/*
 !.tmp/README.md
 .playwright-*
+.zcode
